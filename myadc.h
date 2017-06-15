@@ -39,7 +39,8 @@ void  ADCstartConv();
 
 void  ADCstopConv();
 
-
+void setupADC1();
+void setupADC2();
 
 
 

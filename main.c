@@ -29,10 +29,10 @@ int main(void) {
     clockInit();
     initTimers();
     gpioInit();
-  //  myuart_init();
+    //  myuart_init();
     RF430_Init();
     myADCinit();
-  //  myuart_tx_string("PROGRAM STARTED...\r");
+    //  myuart_tx_string("PROGRAM STARTED...\r");
 
 
     startTimer();
@@ -66,7 +66,7 @@ int main(void) {
             int l,m,n;
             adc_addlog = 0;
             GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
-
+            setupADC1();
             for(l = 0;l < SAMPLES ; l++){
                 GPIO_setOutputHighOnPin( GPIO_PORT_P4, GPIO_PIN6);
                 ADCstartConv();
@@ -75,19 +75,42 @@ int main(void) {
                 r = (result - 2048 - 0.5) *2500.0 /2048;
                 r+= 0.610352;
                 avghold[l] = (int)r;
-              //  sprintf(str,"%d,",avghold[l]);
-              //  myuart_tx_string(str);
+                //  sprintf(str,"%d,",avghold[l]);
+                //  myuart_tx_string(str);
                 ADCstopConv();
                 GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
             }
-        //    sprintf(str,"%d,", takeSamples());
-        //    myuart_tx_string(str);
+            //    sprintf(str,"%d,", takeSamples());
+            //    myuart_tx_string(str);
             n = takeSamples()%1000;
             l = n/100;  //hundreds
             n = n%100;
             m = n/10;   //tenths
             n = n%10;   //ones
-            push_data(l,m,n);
+            push_data(l,m,n,0);
+
+            setupADC2();
+            for(l = 0;l < SAMPLES ; l++){
+                GPIO_setOutputHighOnPin( GPIO_PORT_P4, GPIO_PIN6);
+                ADCstartConv();
+                while(!(ADC12IFGR0 & BIT0));
+                result = ADC12MEM0;
+                r = (result - 2048 - 0.5) *2500.0 /2048;
+                r+= 0.610352;
+                avghold[l] = (int)r;
+                //  sprintf(str,"%d,",avghold[l]);
+                //  myuart_tx_string(str);
+                ADCstopConv();
+                GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
+            }
+            //    sprintf(str,"%d,", takeSamples());
+            //    myuart_tx_string(str);
+            n = takeSamples()%1000;
+            l = n/100;  //hundreds
+            n = n%100;
+            m = n/10;   //tenths
+            n = n%10;   //ones
+            push_data(l,m,n,1);
 
         }
 
@@ -109,7 +132,7 @@ void gpioInit(){
     //#else
     //	P2DIR |= 0b10111011;
     //#endif
-    P3DIR |= 0b11001100;
+    P3DIR |= 0b11000000;
     P4DIR |= 0xFF;
     PJDIR |= 0b11001111;
 
@@ -177,7 +200,7 @@ __interrupt void timer1_ISR(void) {
         break;                    // (0x0C) Reserved
     case TA1IV_TAIFG:             // (0x0E) TA1IFG - TAR overflow
         is06Sec++;
-        if(is06Sec == 10){
+        if(is06Sec == 1){
             adc_addlog=1;
             is06Sec = 0;
         }

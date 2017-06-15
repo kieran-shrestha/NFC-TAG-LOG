@@ -9,7 +9,7 @@
 #define LOGGER_H_
 
 
-void push_data(int l,int m,int n);
+void push_data(int l,int m,int n,int adcch);
 
 
 #endif /* LOGGER_H_ */
