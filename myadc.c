@@ -26,19 +26,32 @@ void ADCstopConv(){
 }
 
 void setupADC1(){
+<<<<<<< HEAD
     P3SEL1 |= BIT0; // Configure ADC inputs A12
     P3SEL0 |= BIT0;
+=======
+    P1SEL1 |= BIT4; // Configure ADC inputs A4
+    P1SEL0 |= BIT4;
+>>>>>>> 7c9772c... two single channel reading
 
     ADC12MCTL0 &= 0xFFE0;
-    ADC12MCTL0 |= ADC12INCH_12;
+    ADC12MCTL0 |= ADC12INCH_4;
 }
 
 void setupADC2(){
+<<<<<<< HEAD
     P3SEL1 |= BIT1;  // Configure ADC inputs A13
     P3SEL0 |= BIT1;
 
     ADC12MCTL0 &= 0xFFE0;
     ADC12MCTL0 |= ADC12INCH_13;
+=======
+    P1SEL1 |= BIT5;  // Configure ADC inputs A5
+    P1SEL0 |= BIT5;
+
+    ADC12MCTL0 &= 0xFFE0;
+    ADC12MCTL0 |= ADC12INCH_5;
+>>>>>>> 7c9772c... two single channel reading
 
 }
 

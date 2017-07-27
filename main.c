@@ -30,7 +30,11 @@ int main(void) {
     initTimers();
     gpioInit();
     myuart_init();
+<<<<<<< HEAD
    // RF430_Init();
+=======
+    //RF430_Init();
+>>>>>>> 7c9772c... two single channel reading
     myADCinit();
     myuart_tx_string("PROGRAM STARTED...\r");
 
@@ -80,6 +84,7 @@ int main(void) {
                 ADCstopConv();
                 GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
             }
+<<<<<<< HEAD
             n = takeSamples();
             sprintf(str,"RS,%d,", n);
             myuart_tx_string(str);
@@ -89,6 +94,16 @@ int main(void) {
 //                        m = n/10;   //tenths
 //                        n = n%10;   //ones
 //                        push_data(l,m,n,0);
+=======
+            sprintf(str,"%d,", takeSamples());
+            myuart_tx_string(str);
+            //            n = takeSamples()%1000;
+            //            l = n/100;  //hundreds
+            //            n = n%100;
+            //            m = n/10;   //tenths
+            //            n = n%10;   //ones
+            //            push_data(l,m,n,0);
+>>>>>>> 7c9772c... two single channel reading
 
             setupADC2();
             for(l = 0;l < SAMPLES ; l++){
@@ -104,6 +119,7 @@ int main(void) {
                 ADCstopConv();
                 GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
             }
+<<<<<<< HEAD
             m = takeSamples();
             sprintf(str,"WS,%d,DF,%d\r", m,abs(m-n));
             myuart_tx_string(str);
@@ -113,6 +129,16 @@ int main(void) {
 //                        m = n/10;   //tenths
 //                        n = n%10;   //ones
 //                        push_data(l,m,n,1);
+=======
+            sprintf(str,"%d,", takeSamples());
+            myuart_tx_string(str);
+            //            n = takeSamples()%1000;
+            //            l = n/100;  //hundreds
+            //            n = n%100;
+            //            m = n/10;   //tenths
+            //            n = n%10;   //ones
+            //            push_data(l,m,n,1);
+>>>>>>> 7c9772c... two single channel reading
 
         }
 
