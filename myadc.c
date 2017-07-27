@@ -27,11 +27,11 @@ void ADCstopConv(){
 
 
 void myADCinit(){
-//	P1SEL1 |= BIT4 | BIT5;                    // Configure ADC inputs A2 and A3
-//	P1SEL0 |= BIT4 | BIT5;
+	P1SEL1 |= BIT4 | BIT5;                    // Configure ADC inputs A2 and A3
+	P1SEL0 |= BIT4 | BIT5;
 
-	P3SEL1 |= BIT0 | BIT1;                    // Configure ADC inputs A2 and A3
-	P3SEL0 |= BIT0 | BIT1;
+//	P3SEL1 |= BIT0 | BIT1;                    // Configure ADC inputs A2 and A3
+//	P3SEL0 |= BIT0 | BIT1;
 
 	REFCTL0 = REFVSEL_2 | REFON;			//setting 2.5v as ref
 	ADC12CTL0 = ADC12SHT0_5| ADC12ON;     // Sampling time, ADC12 on

@@ -177,7 +177,7 @@ __interrupt void timer1_ISR(void) {
         break;                    // (0x0C) Reserved
     case TA1IV_TAIFG:             // (0x0E) TA1IFG - TAR overflow
         is06Sec++;
-        if(is06Sec == 10){
+        if(is06Sec == 20){
             adc_addlog=1;
             is06Sec = 0;
         }
