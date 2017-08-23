@@ -80,7 +80,8 @@ int main(void) {
                 ADCstopConv();
                 GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
             }
-            sprintf(str,"%d,", takeSamples());
+            n = takeSamples();
+            sprintf(str,"RS,%d,", n);
             myuart_tx_string(str);
             //            n = takeSamples()%1000;
             //            l = n/100;  //hundreds
@@ -103,7 +104,8 @@ int main(void) {
                 ADCstopConv();
                 GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
             }
-            sprintf(str,"%d,", takeSamples());
+            m = takeSamples();
+            sprintf(str,"WS,%d,DF,%d\r", m,abs(m-n));
             myuart_tx_string(str);
             //            n = takeSamples()%1000;
             //            l = n/100;  //hundreds
