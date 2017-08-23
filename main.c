@@ -30,7 +30,7 @@ int main(void) {
     initTimers();
     gpioInit();
     myuart_init();
-    //RF430_Init();
+   // RF430_Init();
     myADCinit();
     myuart_tx_string("PROGRAM STARTED...\r");
 
@@ -83,12 +83,12 @@ int main(void) {
             n = takeSamples();
             sprintf(str,"RS,%d,", n);
             myuart_tx_string(str);
-            //            n = takeSamples()%1000;
-            //            l = n/100;  //hundreds
-            //            n = n%100;
-            //            m = n/10;   //tenths
-            //            n = n%10;   //ones
-            //            push_data(l,m,n,0);
+//                        n = takeSamples()%1000;
+//                        l = n/100;  //hundreds
+//                        n = n%100;
+//                        m = n/10;   //tenths
+//                        n = n%10;   //ones
+//                        push_data(l,m,n,0);
 
             setupADC2();
             for(l = 0;l < SAMPLES ; l++){
@@ -107,12 +107,12 @@ int main(void) {
             m = takeSamples();
             sprintf(str,"WS,%d,DF,%d\r", m,abs(m-n));
             myuart_tx_string(str);
-            //            n = takeSamples()%1000;
-            //            l = n/100;  //hundreds
-            //            n = n%100;
-            //            m = n/10;   //tenths
-            //            n = n%10;   //ones
-            //            push_data(l,m,n,1);
+//                        n = takeSamples()%1000;
+//                        l = n/100;  //hundreds
+//                        n = n%100;
+//                        m = n/10;   //tenths
+//                        n = n%10;   //ones
+//                        push_data(l,m,n,1);
 
         }
 
