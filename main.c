@@ -29,10 +29,10 @@ int main(void) {
     clockInit();
     initTimers();
     gpioInit();
-    //  myuart_init();
-    RF430_Init();
+    myuart_init();
+    //RF430_Init();
     myADCinit();
-    //  myuart_tx_string("PROGRAM STARTED...\r");
+    myuart_tx_string("PROGRAM STARTED...\r");
 
 
     startTimer();
@@ -72,22 +72,23 @@ int main(void) {
                 ADCstartConv();
                 while(!(ADC12IFGR0 & BIT0));
                 result = ADC12MEM0;
-                r = (result - 2048 - 0.5) *2500.0 /2048;
-                r+= 0.610352;
+                r = result*2500.0 /4096 - 1250/4096.0;
+                // r+= 0.610352;
                 avghold[l] = (int)r;
                 //  sprintf(str,"%d,",avghold[l]);
                 //  myuart_tx_string(str);
                 ADCstopConv();
                 GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
             }
-            //    sprintf(str,"%d,", takeSamples());
-            //    myuart_tx_string(str);
-            n = takeSamples()%1000;
-            l = n/100;  //hundreds
-            n = n%100;
-            m = n/10;   //tenths
-            n = n%10;   //ones
-            push_data(l,m,n,0);
+            n = takeSamples();
+            sprintf(str,"RS,%d,", n);
+            myuart_tx_string(str);
+            //            n = takeSamples()%1000;
+            //            l = n/100;  //hundreds
+            //            n = n%100;
+            //            m = n/10;   //tenths
+            //            n = n%10;   //ones
+            //            push_data(l,m,n,0);
 
             setupADC2();
             for(l = 0;l < SAMPLES ; l++){
@@ -95,22 +96,23 @@ int main(void) {
                 ADCstartConv();
                 while(!(ADC12IFGR0 & BIT0));
                 result = ADC12MEM0;
-                r = (result - 2048 - 0.5) *2500.0 /2048;
-                r+= 0.610352;
+                r = result*2500.0 /4096 - 1250/4096.0;
+                // r+= 0.610352;
                 avghold[l] = (int)r;
                 //  sprintf(str,"%d,",avghold[l]);
                 //  myuart_tx_string(str);
                 ADCstopConv();
                 GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
             }
-            //    sprintf(str,"%d,", takeSamples());
-            //    myuart_tx_string(str);
-            n = takeSamples()%1000;
-            l = n/100;  //hundreds
-            n = n%100;
-            m = n/10;   //tenths
-            n = n%10;   //ones
-            push_data(l,m,n,1);
+            m = takeSamples();
+            sprintf(str,"WS,%d,DF,%d\r", m,abs(m-n));
+            myuart_tx_string(str);
+            //            n = takeSamples()%1000;
+            //            l = n/100;  //hundreds
+            //            n = n%100;
+            //            m = n/10;   //tenths
+            //            n = n%10;   //ones
+            //            push_data(l,m,n,1);
 
         }
 
@@ -126,7 +128,7 @@ void gpioInit(){
     __delay_cycles(50000);
     P4OUT &= ~BIT5;	//SET to 0 again
 
-    P1DIR |= 0b00000111;
+   // P1DIR |= 0b00000111;
     //#ifdef DEBUG
     P2DIR |= 0b10111000;
     //#else
@@ -136,7 +138,7 @@ void gpioInit(){
     P4DIR |= 0xFF;
     PJDIR |= 0b11001111;
 
-    P1OUT = 0x00;
+    //P1OUT = 0x00;
     P2OUT = 0x00;
     P3OUT = 0x00;
     P4OUT = 0x00;
