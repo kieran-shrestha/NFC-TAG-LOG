@@ -22,14 +22,10 @@ void myuart_init(void)
   // Configure USCI_A0 for UART mode
   UCA0CTLW0 = UCSWRST;                      // Put eUSCI in reset
   UCA0CTLW0 |= UCSSEL__SMCLK;               // CLK = SMCLK
-  // Baud Rate calculation
-  // 8000000/(16*9600) = 52.083  or if smclk = 2Mhz, 2000000/(16*9600)
-  // Fractional portion = 0.083
-  // User's Guide Table 21-4: UCBRSx = 0x04
-  // UCBRFx = int ( (52.083-52)*16) = 1
-  UCA0BR0 = 26;                             // 4000000/16/9600
+
+  UCA0BR0 = 8;                             // 4000000/16/9600
   UCA0BR1 = 0x00;
-  UCA0MCTLW |= UCOS16 | UCBRF_1;
+  UCA0MCTLW |= UCOS16 | UCBRF_10;
   UCA0CTLW0 &= ~UCSWRST;                    // Initialize eUSCI
 }
 

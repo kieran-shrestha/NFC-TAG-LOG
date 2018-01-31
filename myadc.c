@@ -33,11 +33,12 @@ void myADCinit(){
 //	P3SEL1 |= BIT0 | BIT1;                    // Configure ADC inputs A2 and A3
 //	P3SEL0 |= BIT0 | BIT1;
 
-	REFCTL0 = REFVSEL_2 | REFON;			//setting 2.5v as ref
-	ADC12CTL0 = ADC12SHT0_5| ADC12ON;     // Sampling time, ADC12 on
-	ADC12CTL1 = ADC12SHP | ADC12SSEL_2;     // Use sampling timer
+	REFCTL0 = REFVSEL_1 | REFOUT;			//setting 2.0v as ref
+	REFCTL0 |= REFON;
+	ADC12CTL0 = ADC12SHT0_3| ADC12ON;     // Sampling time, ADC12 on
+	ADC12CTL1 = ADC12SHP | ADC12SSEL_2 | ADC12DIV_7;     // Use sampling timer
 	ADC12CTL2 |= ADC12RES_2;                // 12-bit conversion results
-	ADC12MCTL0 |=  ADC12VRSEL_1 | ADC12INCH_12 | ADC12DIF;   // Channel2 ADC input select; Vref=AVCC
+	ADC12MCTL0 |=  ADC12VRSEL_1 | ADC12INCH_4 | ADC12DIF;   // Channel2 ADC input select; Vref=AVCC
 //	ADC12IER0 |= ADC12IE0;                  // Enable ADC conv complete interrupt
 	//__bis_SR_register( GIE);     // LPM0, ADC12_ISR will force exit
 	__delay_cycles(5000);

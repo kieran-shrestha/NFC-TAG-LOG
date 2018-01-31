@@ -106,7 +106,7 @@ void RF430_I2C_Init(void) {
 	UCB0CTLW0 |= UCMODE_3 + UCMST + UCSYNC + UCTR;//I2C mode, Master mode, sync, transmitter
 	UCB0CTLW0 |= UCSSEL_2;                    		// SMCLK = 4MHz
 
-	UCB0BRW = 10; 								// Baudrate = SMLK/40 = 400kHz
+	UCB0BRW = 40; 								// Baudrate = SMLK/40 = 400kHz
 
 
 	UCB0I2CSA = RF430_I2C_ADDR;					// Set Slave Address
