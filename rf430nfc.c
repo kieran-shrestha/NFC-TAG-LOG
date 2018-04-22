@@ -36,9 +36,17 @@ uint8_t CCFileText[15] = { 0x00, 0x0F, /* CCLEN */
 }; //CC file text
 
 #pragma PERSISTENT (FileTextE104)
-uint8_t FileTextE104[10000] = { 0x00, 0x0A, /* NLEN; NDEF length (3 byte long message) */
-                               0xC1, 0x01,/*lenghth of four bytes */0x00, 0x00, 0x00, 0x03, 0x54, /* T = text */
-                               0x02, 0x65, 0x6E, /* 'e', 'n', */
+uint8_t FileTextE104[15000] = { 0x00, 0x3A+3, /* NLEN; NDEF length (3 byte long message) */
+        0xC1, 0x01,/*lenghth of four bytes */0x00, 0x00, 0x00, 0x33+3, 0x54, /* T = text */
+        0x02, 0x65, 0x6E,  /*'e', 'n', */
+
+        '6','9','9','6','-','1','1','2','2',',',                //10
+        '1','8','0','4','2','3',' ','1','3',':','5','1',',',    //13
+        'S','E','O','U','L',' ','M','I','L','K',' ','1',' ','l','t',',',//16
+        'L','o','w',' ','F','a','t',' ',' ',' ','\n',           //11
+
+        /* 'T23.34THH:MM:20YY/MM/DD0x0d' NDEF data; */
+    //  0x54, 0x00, 0x00, 0x2E, 0x00, 0x00, 0x54, 0x00, 0x00, 0x3A, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x2F, 0x00, 0x00, 0x2F, 0x00, 0x00 ,0x0D
 }; //Ndef file text
 
 uint16_t SelectedFile;		//the file that is currently selected

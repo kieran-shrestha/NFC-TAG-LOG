@@ -3,7 +3,7 @@
 //
 // This routine sets ACLK to run from VLO, then configures MCLK and SMCLK to
 // run from the and high-freq internal clock source (DCO).
-//    ACLK  = ~10KHz
+//    ACLK  = ~32KHz
 //    SMCLK =  8MHz
 //    MCLK  =  8MHz
 // ----------------------------------------------------------------------------
@@ -55,10 +55,10 @@ void clockInit(void) {
     //**************************************************************************
     // Configure Clocks
     //**************************************************************************
-    // Set ACLK to use VLO as its oscillator source (~10KHz)
+    // Set ACLK to use VLO as its oscillator source (~32KHz)
     CS_initClockSignal(
             CS_ACLK,                                                            // Clock you're configuring
-            CS_VLOCLK_SELECT,                                                   // Clock source
+			CS_LFXTCLK_SELECT,                                                   // Clock source
             CS_CLOCK_DIVIDER_1                                                  // Divide down clock source by this much
     );
 
