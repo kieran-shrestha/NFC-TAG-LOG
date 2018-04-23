@@ -26,7 +26,7 @@ const double  ROOM_TEMP          = 298.15;
 #define DEV_BOARD 0                             //Disable if DEV board used; 1=> Dev board used
 
 #if !DEV_BOARD  //Disable if DEV board used
-    #define SUPPLY_VOLTAGE 2955                     //Battery voltage
+    #define SUPPLY_VOLTAGE 2995                    //Battery voltage
     //#define SUPPLY_VOLTAGE 3280                   //If powered by debugger
     #define THERMISTOR_POWER_PORT GPIO_PORT_P3
     #define THERMISTOR_POWER_PIN GPIO_PIN1
@@ -43,8 +43,8 @@ const double  ROOM_TEMP          = 298.15;
 #define LED2_PORT GPIO_PORT_P4
 #define LED2_PIN GPIO_PIN5
 
-#define SLOPE -0.00792
-#define INTERCEPT (284.73892-12-17-17)
+#define SLOPE -0.00912
+#define INTERCEPT (388.19)
 
 char str[30];
 
@@ -87,8 +87,8 @@ int main(void) {
     gpioInit();
     GPIO_setOutputHighOnPin( LED1_PORT, LED1_PIN);
     clockInit();
-    myuart_init();
-    //initTimers();
+//    myuart_init();
+//    initTimers();
     RTC_init();                 //initialize rtc
     datalog_Init();
 
@@ -97,12 +97,12 @@ int main(void) {
     RF430_Init();               //Disable if you want to test in development board with no RF430 ic
 #endif
     myADCinit();
-    myuart_tx_string("PROGRAM STARTED...\r");
+//    myuart_tx_string("PROGRAM STARTED...\r");
 //    datalog_cleanbuffer();
 
 //    startTimer();
     GPIO_setOutputLowOnPin( LED1_PORT, LED1_PIN);
-
+//    GPIO_setOutputHighOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);
     while(1){
         __bis_SR_register(LPM3_bits+GIE);
         __no_operation();
@@ -171,8 +171,10 @@ int main(void) {
             rThermistor = BALANCE_RESISTOR/((SUPPLY_VOLTAGE/thermistor_voltage)-1);
 
 #if 1
-            tCelsius = slope*rThermistor + intercept;
-            thermistor_temperature = tCelsius*100.0;            //24.52312 degree => 2452
+            tCelsius =(slope*rThermistor + intercept)+32.5;
+            thermistor_temperature = tCelsius*100;            //24.52312 degree => 2452
+            sprintf(str,"\nresistance is %f , temp is %d\nReal Temp %d voltage = %d",rThermistor,thermistor_temperature,Temperature,thermistor_voltage);
+            myuart_tx_string(str);
 #endif
 #if 0
             tKelvin = (BETA * ROOM_TEMP) /(BETA + (ROOM_TEMP * log(rThermistor / RESISTOR_ROOM_TEMP)));
@@ -313,18 +315,18 @@ __interrupt void PORT2_ISR(void) {
 //    case TA1IV_6:
 //        break;                    // (0x0C) Reserved
 //    case TA1IV_TAIFG:             // (0x0E) TA1IFG - TAR overflow
-//        //        timer_1sec_flag++;
-//        //        if(timer_1sec_flag == 1){
-//        //            adc_addlog=1;
-//        //            timer_1sec_flag = 0;
-//        //        }
+//                timer_1sec_flag++;
+//                if(timer_1sec_flag == 1){
+//                    adc_addlog=1;
+//                    timer_1sec_flag = 0;
+//                }
 //        __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
 //        break;
 //    default:
 //        _never_executed();
 //    }
 //}
-//
+
 //#pragma vector = ADC12_VECTOR
 //__interrupt void ADC12_ISR(void)
 //{
