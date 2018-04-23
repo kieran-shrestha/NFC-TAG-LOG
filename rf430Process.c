@@ -7,13 +7,13 @@
 
 //#define DEBUG 1
 
-unsigned char rstdata[] =  { 0x00, 0x0A, /* NLEN; NDEF length (3 byte long message) */
-		0xC1, 0x01,/*lenghth of four bytes */0x00, 0x00, 0x00, 0x03, 0x54, /* T = text */
-		0x02, 0x65, 0x6E, /* 'e', 'n', */
-
-		/* 'T23.34THH:MM:20YY/MM/DD0x0d' NDEF data; */
-		0x54, 0x00, 0x00, 0x2E, 0x00, 0x00, 0x54, 0x00, 0x00, 0x3A, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x2F, 0x00, 0x00, 0x2F, 0x00, 0x00 ,0x0D
-}; //Ndef file text
+//unsigned char rstdata[] =  { 0x00, 0x0A, /* NLEN; NDEF length (3 byte long message) */
+//		0xC1, 0x01,/*lenghth of four bytes */0x00, 0x00, 0x00, 0x03, 0x54, /* T = text */
+//		0x02, 0x65, 0x6E, /* 'e', 'n', */
+//
+//		/* 'T23.34THH:MM:20YY/MM/DD0x0d' NDEF data; */
+//		0x54, 0x00, 0x00, 0x2E, 0x00, 0x00, 0x54, 0x00, 0x00, 0x3A, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x2F, 0x00, 0x00, 0x2F, 0x00, 0x00 ,0x0D
+//}; //Ndef file text
 
 
 
@@ -119,59 +119,59 @@ void rf430Interrupt(uint16_t flags) {
 			break;
 		}
 
-		// NDEF UpdateBinary request
-		case FILE_AVAILABLE_STATUS: {
-			uint16_t buffer_start;
-			uint16_t file_offset;
-			uint16_t file_length;
-			int i;
-#ifdef DEBUG
-			char str[30];
-			myuart_tx_string("entered writing section1\n\r");
-#endif
-			interrupt_serviced |= DATA_TRANSACTION_INT_FLAG; // clear this flag later
-			buffer_start = Read_Register(NDEF_BUFFER_START); // where to start in the RF430 buffer to read the file data (0-2999)
-			file_offset = Read_Register(NDEF_FILE_OFFSET); // the file offset that the data begins at
-			file_length = Read_Register(NDEF_FILE_LENGTH); // how much of the file is in the RF430 buffer
-
-			//can have bounds check for the requested length
-			ReadDataOnFile(SelectedFile, buffer_start, file_offset,
-					file_length);
-
-			for(i = 9 ;i<10+9;i++){
-
-				if(FileTextE104[9] == 's' && FileTextE104[10] == 't'){
-					HOURS = (FileTextE104[11]-48)<<4 |( FileTextE104[12]-48) ;
-					MINUTES = (FileTextE104[13]-48)<<4 | FileTextE104[14]-48;
-					YEARS = (FileTextE104[15]-48)<<4 | FileTextE104[16]-48;
-
-					MONTHS = (FileTextE104[17]-48)<<4 | FileTextE104[18]-48;
-					DAYS = (FileTextE104[19]-48)<<4 | FileTextE104[20]-48;
-
-					for(i =0 ;i<36;i++){
-						FileTextE104[i] = rstdata[i];
-
-					}
-
-					numOfLogsInFram = 0;
-
-					ui16nlenhold = 0x000A;
-
-					ui16plenhold = 0x0003;
-
-					WDTCTL = 0;
-				}
-			}
-
-#ifdef DEBUG
-			sprintf(str, "\n\rbuff-%d off-%d len-%d self-%d\n\r",buffer_start,file_offset,file_length,SelectedFile);
-			myuart_tx_string(str);
-#endif
-			Write_Register(INT_FLAG_REG, interrupt_serviced); // ACK the flags to clear
-			Write_Register(HOST_RESPONSE, INT_SERVICED_FIELD); // the interrupt has been serviced
-
-			break;
-		}
+//		// NDEF UpdateBinary request
+//		case FILE_AVAILABLE_STATUS: {
+//			uint16_t buffer_start;
+//			uint16_t file_offset;
+//			uint16_t file_length;
+//			int i;
+//#ifdef DEBUG
+//			char str[30];
+//			myuart_tx_string("entered writing section1\n\r");
+//#endif
+//			interrupt_serviced |= DATA_TRANSACTION_INT_FLAG; // clear this flag later
+//			buffer_start = Read_Register(NDEF_BUFFER_START); // where to start in the RF430 buffer to read the file data (0-2999)
+//			file_offset = Read_Register(NDEF_FILE_OFFSET); // the file offset that the data begins at
+//			file_length = Read_Register(NDEF_FILE_LENGTH); // how much of the file is in the RF430 buffer
+//
+//			//can have bounds check for the requested length
+//			ReadDataOnFile(SelectedFile, buffer_start, file_offset,
+//					file_length);
+//
+//			for(i = 9 ;i<10+9;i++){
+//
+//				if(FileTextE104[9] == 's' && FileTextE104[10] == 't'){
+//					HOURS = (FileTextE104[11]-48)<<4 |( FileTextE104[12]-48) ;
+//					MINUTES = (FileTextE104[13]-48)<<4 | FileTextE104[14]-48;
+//					YEARS = (FileTextE104[15]-48)<<4 | FileTextE104[16]-48;
+//
+//					MONTHS = (FileTextE104[17]-48)<<4 | FileTextE104[18]-48;
+//					DAYS = (FileTextE104[19]-48)<<4 | FileTextE104[20]-48;
+//
+//					for(i =0 ;i<36;i++){
+//						FileTextE104[i] = rstdata[i];
+//
+//					}
+//
+//					numOfLogsInFram = 0;
+//
+//					ui16nlenhold = 0x000A;
+//
+//					ui16plenhold = 0x0003;
+//
+//					WDTCTL = 0;
+//				}
+//			}
+//
+//#ifdef DEBUG
+//			sprintf(str, "\n\rbuff-%d off-%d len-%d self-%d\n\r",buffer_start,file_offset,file_length,SelectedFile);
+//			myuart_tx_string(str);
+//#endif
+//			Write_Register(INT_FLAG_REG, interrupt_serviced); // ACK the flags to clear
+//			Write_Register(HOST_RESPONSE, INT_SERVICED_FIELD); // the interrupt has been serviced
+//
+//			break;
+//		}
 
 		} //end of switch
 

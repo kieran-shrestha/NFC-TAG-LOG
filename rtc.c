@@ -11,7 +11,7 @@
 #include "myuart.h"
 #include "stdio.h"
 
-//#define DEBUG
+#define DEBUG
 
 unsigned int mincounter = 0;
 //extern unsigned char tempFired;
@@ -63,15 +63,8 @@ void RTC_init(){
 		RTCMON = decToBcd(tm.tm_mon) +1;
 		RTCDAY = decToBcd(tm.tm_mday);
 #ifdef DEBUG
-//
-//		  time_t rawtime;
-//		  struct tm * timeinfo;
-//
-//		  time (&rawtime);
-//		  timeinfo = localtime (&rawtime);
-//		  sprintf (str,"Current local time and date: %s", asctime(timeinfo));
-		  sprintf(str, "Time %d:%d year = 20%d month = %d day = %d",tm.tm_hour,tm.tm_min,tm.tm_year-100,tm.tm_mon+1,tm.tm_mday);
-		  myuart_tx_string(str);
+			sprintf(str, "%d : %d ",tm.tm_hour,tm.tm_min);
+			myuart_tx_string(str);
 #endif
 		HOURS = RTCHOUR;
 		MINUTES = RTCMIN;

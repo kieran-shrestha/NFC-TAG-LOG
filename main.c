@@ -23,7 +23,7 @@ const double  ROOM_TEMP          = 298.15;
 #define DEV_BOARD 0                             //Disable if DEV board used; 1=> Dev board used
 
 #if !DEV_BOARD  //Disable if DEV board used
-    #define SUPPLY_VOLTAGE 2995                    //Battery voltage
+    #define SUPPLY_VOLTAGE 2955                     //Battery voltage
     //#define SUPPLY_VOLTAGE 3280                   //If powered by debugger
     #define THERMISTOR_POWER_PORT GPIO_PORT_P3
     #define THERMISTOR_POWER_PIN GPIO_PIN1
@@ -40,8 +40,8 @@ const double  ROOM_TEMP          = 298.15;
 #define LED2_PORT GPIO_PORT_P4
 #define LED2_PIN GPIO_PIN5
 
-#define SLOPE -0.00912
-#define INTERCEPT (388.19)
+#define SLOPE -0.00792
+#define INTERCEPT (284.73892-12-17-17)
 
 char str[30];
 
@@ -60,8 +60,8 @@ unsigned int flags = 0;
 int main(void) {
     WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
     clockInit();
-//    myuart_init();
-//    initTimers();
+    myuart_init();
+    //initTimers();
     RTC_init();                 //initialize rtc
     datalog_Init();
 
@@ -70,11 +70,12 @@ int main(void) {
     RF430_Init();               //Disable if you want to test in development board with no RF430 ic
 #endif
     myADCinit();
-//    myuart_tx_string("PROGRAM STARTED...\r");
+    myuart_tx_string("PROGRAM STARTED...\r");
 //    datalog_cleanbuffer();
 
 //    startTimer();
     GPIO_setOutputLowOnPin( LED1_PORT, LED1_PIN);
+
 //    GPIO_setOutputHighOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);
     initTimers();
     gpioInit();
@@ -83,8 +84,8 @@ int main(void) {
     myADCinit();
   //  myuart_tx_string("PROGRAM STARTED...\r");
 
-
     startTimer();
+
 
     while(1){
         __bis_SR_register(LPM3_bits+GIE);
@@ -138,10 +139,8 @@ int main(void) {
             rThermistor = BALANCE_RESISTOR/((SUPPLY_VOLTAGE/thermistor_voltage)-1);
 
 #if 1
-            tCelsius =(slope*rThermistor + intercept)+32.5;
-            thermistor_temperature = tCelsius*100;            //24.52312 degree => 2452
-            sprintf(str,"\nresistance is %f , temp is %d\nReal Temp %d voltage = %d",rThermistor,thermistor_temperature,Temperature,thermistor_voltage);
-            myuart_tx_string(str);
+            tCelsius = slope*rThermistor + intercept;
+            thermistor_temperature = tCelsius*100.0;            //24.52312 degree => 2452
 #endif
 #if 0
             tKelvin = (BETA * ROOM_TEMP) /(BETA + (ROOM_TEMP * log(rThermistor / RESISTOR_ROOM_TEMP)));
@@ -291,11 +290,11 @@ __interrupt void PORT2_ISR(void) {
 //    case TA1IV_6:
 //        break;                    // (0x0C) Reserved
 //    case TA1IV_TAIFG:             // (0x0E) TA1IFG - TAR overflow
-//                timer_1sec_flag++;
-//                if(timer_1sec_flag == 1){
-//                    adc_addlog=1;
-//                    timer_1sec_flag = 0;
-//                }
+//        //        timer_1sec_flag++;
+//        //        if(timer_1sec_flag == 1){
+//        //            adc_addlog=1;
+//        //            timer_1sec_flag = 0;
+//        //        }
 //        __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
 //        break;
 //    default:
@@ -303,42 +302,7 @@ __interrupt void PORT2_ISR(void) {
 //    }
 //}
 
-=======
-#pragma vector=TIMER1_A1_VECTOR
-__interrupt void timer1_ISR(void) {
 
-    //**************************************************************************
-    // 4. Timer ISR and vector
-    //**************************************************************************
-    switch (__even_in_range(TA1IV, TA1IV_TAIFG)) {
-    case TA1IV_NONE:
-        break;                 // (0x00) None
-    case TA1IV_TACCR1:                      // (0x02) CCR1 IFG
-        _no_operation();
-        break;
-    case TA1IV_TACCR2:                      // (0x04) CCR2 IFG
-        _no_operation();
-        break;
-    case TA1IV_3:
-        break;                    // (0x06) Reserved
-    case TA1IV_4:
-        break;                    // (0x08) Reserved
-    case TA1IV_5:
-        break;                    // (0x0A) Reserved
-    case TA1IV_6:
-        break;                    // (0x0C) Reserved
-    case TA1IV_TAIFG:             // (0x0E) TA1IFG - TAR overflow
-//        is06Sec++;
-//        if(is06Sec == 20){
-//            adc_addlog=1;
-//            is06Sec = 0;
-//        }
-        __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
-        break;
-    default:
-        _never_executed();
-    }
-}
 //
 //#pragma vector = ADC12_VECTOR
 //__interrupt void ADC12_ISR(void)
