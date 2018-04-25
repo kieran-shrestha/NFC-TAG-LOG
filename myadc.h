@@ -34,7 +34,8 @@
 
 void myADCinit();
 int takeSamples();
-
+void setupADC();
+void setupBatMon();
 void  ADCstartConv();
 
 void  ADCstopConv();

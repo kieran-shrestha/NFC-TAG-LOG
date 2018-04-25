@@ -1,3 +1,7 @@
+/* This code is for the Kunsan University with bijen's thermistor
+ * and using our printed antenna and old chip bigger mem
+ */
+
 #include <msp430.h> 
 #include "myClock.h"
 #include "myuart.h"
@@ -6,7 +10,6 @@
 #include "rf430Process.h"
 #include "myTimers.h"
 #include "myadc.h"
-//#include "ph.h"
 #include "logger.h"
 #include <stdio.h>
 #include "datalog.h"
@@ -14,86 +17,89 @@
 #include "rtc.h"
 #include "math.h"
 
-const double  BALANCE_RESISTOR   = 200000.0;
-const double  RESISTOR_ROOM_TEMP = 46611.0;
-const double  MAX_ADC            = 4095.0;
-const double  BETA               = 208.9;
-const double  ROOM_TEMP          = 298.15;
+#define BALANCE_RESISTOR  100000.0
+#define RESISTOR_ROOM_TEMP 46611.0
+#define MAX_ADC 4095.0
+#define BETA 208.9
+#define ROOM_TEMP 298.15
 
-#define DEV_BOARD 0                             //Disable if DEV board used; 1=> Dev board used
 
-#if !DEV_BOARD  //Disable if DEV board used
-    #define SUPPLY_VOLTAGE 2955                     //Battery voltage
-    //#define SUPPLY_VOLTAGE 3280                   //If powered by debugger
-    #define THERMISTOR_POWER_PORT GPIO_PORT_P3
-    #define THERMISTOR_POWER_PIN GPIO_PIN1
-#endif
-
-#if DEV_BOARD   //Enable if DEV board used
-    #define SUPPLY_VOLTAGE 3628
-    #define THERMISTOR_POWER_PORT GPIO_PORT_P1
-    #define THERMISTOR_POWER_PIN GPIO_PIN2
-#endif
+#define SUPPLY_VOLTAGE 3300                     //Battery voltage
+#define THERMISTOR_POWER_PORT GPIO_PORT_P3
+#define THERMISTOR_POWER_PIN GPIO_PIN2
 
 #define LED1_PORT GPIO_PORT_P4
 #define LED1_PIN GPIO_PIN6
 #define LED2_PORT GPIO_PORT_P4
 #define LED2_PIN GPIO_PIN5
 
-#define SLOPE -0.00792
-#define INTERCEPT (284.73892-12-17-17)
+#define slope -0.00912
+#define intercept 388.19
 
 char str[30];
 
 extern float result,r;
 extern int avghold[];
 
+extern int offset;
+extern int digitalSensor;
+
 int adc_addlog = 1;
 int i;
-int is06Sec = 0;
+int timer_1sec_flag = 0;
 
 void gpioInit();
+
+unsigned char ui8TemperatureNegFlag;
+
+unsigned int g_TempDataFahr;
+unsigned int g_TempDataCel;
+
+char g_TempNegFlagCel = 0;
+char g_TempNegFlagFahr = 0;
+
+typedef enum {
+    Fahrenheit = 0, Celcius
+} Temp_Modes_t;
+
+Temp_Modes_t g_ui8TemperatureModeFlag = Celcius;
 
 unsigned char nfcFired = 0;
 unsigned int flags = 0;
 
 int main(void) {
-    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+    int digitalTemperature;       //to hold the temperature
+    unsigned int thermistorTemperature;        //to hold Thermistor temperature
+
+    float tCelsius;
+
+    WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
+    gpioInit();
+
+    GPIO_setOutputHighOnPin( LED1_PORT, LED1_PIN);
+
     clockInit();
-    myuart_init();
-    //initTimers();
-    RTC_init();                 //initialize rtc
+//    myuart_init();
+    initTimers();
+    RTC_init();
     datalog_Init();
 
-#if !DEV_BOARD  //Disable if DEV board used
-    TMP_Config_Init();          // configure to be in shutdown one shot mode
-    RF430_Init();               //Disable if you want to test in development board with no RF430 ic
-#endif
-    myADCinit();
-    myuart_tx_string("PROGRAM STARTED...\r");
-//    datalog_cleanbuffer();
-
-//    startTimer();
-    GPIO_setOutputLowOnPin( LED1_PORT, LED1_PIN);
-
-//    GPIO_setOutputHighOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);
-    initTimers();
-    gpioInit();
-  //  myuart_init();
+    TMP_Config_Init();
     RF430_Init();
     myADCinit();
-  //  myuart_tx_string("PROGRAM STARTED...\r");
 
+//    myuart_tx_string("PROGRAM STARTED...\r");
     startTimer();
-
+    GPIO_setOutputLowOnPin( LED1_PORT, LED1_PIN);
 
     while(1){
         __bis_SR_register(LPM3_bits+GIE);
         __no_operation();
+
         if( nfcFired){
             flags = Read_Register(INT_FLAG_REG);
-            GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN5);
-            GPIO_setOutputHighOnPin( GPIO_PORT_P4, GPIO_PIN5);
+            GPIO_setOutputLowOnPin( LED1_PORT, LED1_PIN);
+            GPIO_setOutputHighOnPin(  LED1_PORT, LED1_PIN);
 
             do {
                 if (flags) {
@@ -102,95 +108,79 @@ int main(void) {
                 flags = Read_Register(INT_FLAG_REG);
             } while (flags);
 
-            GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN5);
+            GPIO_setOutputLowOnPin(  LED1_PORT, LED1_PIN);
 
             flags = 0;
             nfcFired = 0;
             P2IFG &= ~BIT2;	//clear the interrupt again
             P2IE |= BIT2;	//enable the interrupt
-
         }
 
-
         if(adc_addlog == 1){
-            int l,m,n;
-            adc_addlog = 0;
-            GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
+            int l;
+            float thermistor_voltage;
+            float rThermistor;
+            float temps;
 
+            GPIO_setOutputHighOnPin( LED2_PORT, LED2_PIN);
+            TMP_Get_Temp(&digitalTemperature, &ui8TemperatureNegFlag,
+                    g_ui8TemperatureModeFlag);
+            if (ui8TemperatureNegFlag) {
+                digitalTemperature = (-1.0) * digitalTemperature; //think shoud change to signed variable
+            }
+
+            //                  if(Temperature > TEMP_RECORD_THRSHLD ){
+            //                      data_buffer(Temperature);
+            //                  }
+            //                  else{
+            //                      __bic_SR_register(LPM4_bits + GIE);
+            //                      __no_operation();
+            //                  }
+            GPIO_setOutputLowOnPin(  LED2_PORT, LED2_PIN);
+
+            adc_addlog = 0;
+            GPIO_setOutputLowOnPin(  LED2_PORT, LED2_PIN);
+
+            GPIO_setOutputHighOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);          //turn on thermistor voltage source GIOP pin to power up the thermistor voltage divider circuit
+ //           GPIO_setOutputLowOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);
+            setupADC();
             for(l = 0;l < SAMPLES ; l++){
-                GPIO_setOutputHighOnPin( GPIO_PORT_P4, GPIO_PIN6);
+                GPIO_setOutputHighOnPin(  LED2_PORT, LED2_PIN);
                 ADCstartConv();
                 while(!(ADC12IFGR0 & BIT0));
                 result = ADC12MEM0;
-                r = (result - 2048 - 0.5) *2500.0 /2048;
-                r+= 0.610352;
-                avghold[l] = (int)r;
-              //  sprintf(str,"%d,",avghold[l]);
-              //  myuart_tx_string(str);
+                r = result*2500.0/4096 - 1250/4096.0;
+                avghold[l] = (int) r;
                 ADCstopConv();
-                GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
+                GPIO_setOutputLowOnPin( LED2_PORT, LED2_PIN);           //turn off led (1.0) to indicate ADC conversion completed
             }
-        //    sprintf(str,"%d,", takeSamples());
-        //    myuart_tx_string(str);
+
             GPIO_setOutputLowOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);           //turn off thermistor voltage source GIOP pin to power down the thermistor voltage divider circuit
-            result = takeSamples();
-            thermistor_voltage = ( result -1 )* (2500.0/4096.0);
+            thermistor_voltage = takeSamples();
 
-            rThermistor = BALANCE_RESISTOR/((SUPPLY_VOLTAGE/thermistor_voltage)-1);
+            //thermistor_voltage = ( result - 0.5 ) * (2500.0/4096.0);
+//            thermistor_voltage = result*2500/4096 - 1250/4096.0;
 
-#if 1
-            tCelsius = slope*rThermistor + intercept;
-            thermistor_temperature = tCelsius*100.0;            //24.52312 degree => 2452
-#endif
-#if 0
-            tKelvin = (BETA * ROOM_TEMP) /(BETA + (ROOM_TEMP * log(rThermistor / RESISTOR_ROOM_TEMP)));
-            tCelsius = tKelvin - 273.15;  // convert kelvin to celsius
-            thermistor_temperature = tCelsius*100.0;            //eg 24.52312 degree => 2452
-#endif
-#if 0   //enable if DEV board used
-            //uart transmit the adc converted value
-            sprintf(str,"%d,", Temperature);
-            myuart_tx_byte(',');
-            myuart_tx_string("Ref_temp,");
-            myuart_tx_string(str);
+           // rThermistor = BALANCE_RESISTOR/((SUPPLY_VOLTAGE/thermistor_voltage)-1);
+            setupBatMon();
+            ADCstartConv();
+            while(!(ADC12IFGR0 & BIT0));
+            result = ADC12MEM0;
+            result = result*2500.0/4096 - 1250/4096.0;
+            ADCstopConv();
 
-            sprintf(str,"%.1f,", rThermistor);
-            myuart_tx_byte(',');
-            myuart_tx_string("rThermistor,");
-            myuart_tx_string(str);
+            rThermistor = thermistor_voltage*BALANCE_RESISTOR/(result*2 - thermistor_voltage);
 
-            sprintf(str,"%.1f,", tCelsius);
-            myuart_tx_byte(',');
-            myuart_tx_string("tCelsius,");
-            myuart_tx_string(str);
-            myuart_tx_byte('\r');
-#endif
-
-#if !DEV_BOARD  //Disable if DEV board used
-            //log using datlog.c
-            //data_buffer(thermistor_temperature, Temperature);
-            data_buffer(Temperature);
-#endif
-
-//            n = takeSamples()%1000;
-//            l = n/100;  //hundreds
-//            n = n%100;
-//            m = n/10;   //tenths
-//            n = n%10;   //ones
-         //   push_data(l,m,n);
-
-//            n = takeSamples()%1000;
-//            l = n/100;  //hundreds
-//            n = n%100;
-//            m = n/10;   //tenths
-//            n = n%10;   //ones
-//            push_data(l,m,n);
-
+            tCelsius = slope*rThermistor + intercept + offset;
+            thermistorTemperature = tCelsius*100.0;            //24.52312 degree => 2452
+            if(thermistorTemperature > 9999)
+                thermistorTemperature = 9999;
+            if( digitalSensor ==  0 )
+                data_buffer(thermistorTemperature);
+            else
+                data_buffer(digitalTemperature);
 
         }
-
-
-
     }
 }
 
@@ -227,6 +217,9 @@ void gpioInit(){
     GPIO_setAsOutputPin( GPIO_PORT_P4, GPIO_PIN5);         // d2 led
     GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN5);
 
+    GPIO_setAsOutputPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);
+    GPIO_setOutputHighOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);
+
     P1SEL1 |= BIT6;		//setting p1.6 as sda
     P1SEL1 |= BIT7;		//setting p1.7 as scl
 
@@ -246,64 +239,62 @@ __interrupt void PORT2_ISR(void) {
     }
 }
 
-
+//
 //*****************************************************************************
 // Interrupt Service Routine
 //*****************************************************************************
-
-//#pragma vector=TIMER1_A0_VECTOR
-//__interrupt void ccr0_ISR (void)
-//{
-//    //**************************************************************************
-//    // 4. Timer ISR and vector //
-//    //timer set to interrupt every 500ms//
-//    //**************************************************************************
-//    timer_1sec_flag++;
-//    if(timer_1sec_flag == 10){
-//        //thermistorFired=1;
-//        adc_addlog = 1;
-//        timer_1sec_flag = 0;
-//    }
-//}
+#pragma vector=TIMER1_A0_VECTOR
+__interrupt void ccr0_ISR (void)
+{
+    //**************************************************************************
+    // 4. Timer ISR and vector //
+    //timer set to interrupt every 500ms//
+    //**************************************************************************
+    timer_1sec_flag++;
+    if(timer_1sec_flag == 10){
+        //thermistorFired=1;
+        adc_addlog = 1;
+        timer_1sec_flag = 0;
+    }
+    __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
+}
 //
-//#pragma vector=TIMER1_A1_VECTOR
-//__interrupt void timer1_ISR(void) {
-//
-//    //**************************************************************************
-//    // 4. Timer ISR and vector
-//    //**************************************************************************
-//    switch (__even_in_range(TA1IV, TA1IV_TAIFG)) {
-//    case TA1IV_NONE:
-//        break;                 // (0x00) None
-//    case TA1IV_TACCR1:                      // (0x02) CCR1 IFG
-//        _no_operation();
-//        break;
-//    case TA1IV_TACCR2:                      // (0x04) CCR2 IFG
-//        _no_operation();
-//        break;
-//    case TA1IV_3:
-//        break;                    // (0x06) Reserved
-//    case TA1IV_4:
-//        break;                    // (0x08) Reserved
-//    case TA1IV_5:
-//        break;                    // (0x0A) Reserved
-//    case TA1IV_6:
-//        break;                    // (0x0C) Reserved
-//    case TA1IV_TAIFG:             // (0x0E) TA1IFG - TAR overflow
-//        //        timer_1sec_flag++;
-//        //        if(timer_1sec_flag == 1){
-//        //            adc_addlog=1;
-//        //            timer_1sec_flag = 0;
-//        //        }
-//        __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
-//        break;
-//    default:
-//        _never_executed();
-//    }
-//}
+#pragma vector=TIMER1_A1_VECTOR
+__interrupt void timer1_ISR(void) {
 
+    //**************************************************************************
+    // 4. Timer ISR and vector
+    //**************************************************************************
+    switch (__even_in_range(TA1IV, TA1IV_TAIFG)) {
+    case TA1IV_NONE:
+        break;                 // (0x00) None
+    case TA1IV_TACCR1:                      // (0x02) CCR1 IFG
+        _no_operation();
+        break;
+    case TA1IV_TACCR2:                      // (0x04) CCR2 IFG
+        _no_operation();
+        break;
+    case TA1IV_3:
+        break;                    // (0x06) Reserved
+    case TA1IV_4:
+        break;                    // (0x08) Reserved
+    case TA1IV_5:
+        break;                    // (0x0A) Reserved
+    case TA1IV_6:
+        break;                    // (0x0C) Reserved
+    case TA1IV_TAIFG:             // (0x0E) TA1IFG - TAR overflow
+        timer_1sec_flag++;
+        if(timer_1sec_flag == 10){
+            adc_addlog=1;
+            timer_1sec_flag = 0;
+        }
+        __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
+        break;
+    default:
+        _never_executed();
+    }
+}
 
-//
 //#pragma vector = ADC12_VECTOR
 //__interrupt void ADC12_ISR(void)
 //{
