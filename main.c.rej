@@ -1,0 +1,151 @@
+diff a/main.c b/main.c	(rejected hunks)
+@@ -108,95 +108,79 @@
+                 flags = Read_Register(INT_FLAG_REG);
+             } while (flags);
+ 
+-            GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN5);
++            GPIO_setOutputLowOnPin(  LED1_PORT, LED1_PIN);
+ 
+             flags = 0;
+             nfcFired = 0;
+             P2IFG &= ~BIT2;	//clear the interrupt again
+             P2IE |= BIT2;	//enable the interrupt
+-
+         }
+ 
+-
+         if(adc_addlog == 1){
+-            int l,m,n;
++            int l;
++            float thermistor_voltage;
++            float rThermistor;
++            float temps;
++
++            GPIO_setOutputHighOnPin( LED2_PORT, LED2_PIN);
++            TMP_Get_Temp(&digitalTemperature, &ui8TemperatureNegFlag,
++                    g_ui8TemperatureModeFlag);
++            if (ui8TemperatureNegFlag) {
++                digitalTemperature = (-1.0) * digitalTemperature; //think shoud change to signed variable
++            }
++
++            //                  if(Temperature > TEMP_RECORD_THRSHLD ){
++            //                      data_buffer(Temperature);
++            //                  }
++            //                  else{
++            //                      __bic_SR_register(LPM4_bits + GIE);
++            //                      __no_operation();
++            //                  }
++            GPIO_setOutputLowOnPin(  LED2_PORT, LED2_PIN);
++
+             adc_addlog = 0;
+-            GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
++            GPIO_setOutputLowOnPin(  LED2_PORT, LED2_PIN);
+ 
++            GPIO_setOutputHighOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);          //turn on thermistor voltage source GIOP pin to power up the thermistor voltage divider circuit
++ //           GPIO_setOutputLowOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);
++            setupADC();
+             for(l = 0;l < SAMPLES ; l++){
+-                GPIO_setOutputHighOnPin( GPIO_PORT_P4, GPIO_PIN6);
++                GPIO_setOutputHighOnPin(  LED2_PORT, LED2_PIN);
+                 ADCstartConv();
+                 while(!(ADC12IFGR0 & BIT0));
+                 result = ADC12MEM0;
+-                r = (result - 2048 - 0.5) *2500.0 /2048;
+-                r+= 0.610352;
+-                avghold[l] = (int)r;
+-              //  sprintf(str,"%d,",avghold[l]);
+-              //  myuart_tx_string(str);
++                r = result*2500.0/4096 - 1250/4096.0;
++                avghold[l] = (int) r;
+                 ADCstopConv();
+-                GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
++                GPIO_setOutputLowOnPin( LED2_PORT, LED2_PIN);           //turn off led (1.0) to indicate ADC conversion completed
+             }
+-        //    sprintf(str,"%d,", takeSamples());
+-        //    myuart_tx_string(str);
+-            GPIO_setOutputLowOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);           //turn off thermistor voltage source GIOP pin to power down the thermistor voltage divider circuit
+-            result = takeSamples();
+-            thermistor_voltage = ( result -1 )* (2500.0/4096.0);
+-
+-            rThermistor = BALANCE_RESISTOR/((SUPPLY_VOLTAGE/thermistor_voltage)-1);
+-
+-#if 1
+-            tCelsius = slope*rThermistor + intercept;
+-            thermistor_temperature = tCelsius*100.0;            //24.52312 degree => 2452
+-#endif
+-#if 0
+-            tKelvin = (BETA * ROOM_TEMP) /(BETA + (ROOM_TEMP * log(rThermistor / RESISTOR_ROOM_TEMP)));
+-            tCelsius = tKelvin - 273.15;  // convert kelvin to celsius
+-            thermistor_temperature = tCelsius*100.0;            //eg 24.52312 degree => 2452
+-#endif
+-#if 0   //enable if DEV board used
+-            //uart transmit the adc converted value
+-            sprintf(str,"%d,", Temperature);
+-            myuart_tx_byte(',');
+-            myuart_tx_string("Ref_temp,");
+-            myuart_tx_string(str);
+-
+-            sprintf(str,"%.1f,", rThermistor);
+-            myuart_tx_byte(',');
+-            myuart_tx_string("rThermistor,");
+-            myuart_tx_string(str);
+-
+-            sprintf(str,"%.1f,", tCelsius);
+-            myuart_tx_byte(',');
+-            myuart_tx_string("tCelsius,");
+-            myuart_tx_string(str);
+-            myuart_tx_byte('\r');
+-#endif
+-
+-#if !DEV_BOARD  //Disable if DEV board used
+-            //log using datlog.c
+-            //data_buffer(thermistor_temperature, Temperature);
+-            data_buffer(Temperature);
+-#endif
+-
+-//            n = takeSamples()%1000;
+-//            l = n/100;  //hundreds
+-//            n = n%100;
+-//            m = n/10;   //tenths
+-//            n = n%10;   //ones
+-         //   push_data(l,m,n);
+-
+-//            n = takeSamples()%1000;
+-//            l = n/100;  //hundreds
+-//            n = n%100;
+-//            m = n/10;   //tenths
+-//            n = n%10;   //ones
+-//            push_data(l,m,n);
+ 
++            GPIO_setOutputLowOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);           //turn off thermistor voltage source GIOP pin to power down the thermistor voltage divider circuit
++            thermistor_voltage = takeSamples();
++
++            //thermistor_voltage = ( result - 0.5 ) * (2500.0/4096.0);
++//            thermistor_voltage = result*2500/4096 - 1250/4096.0;
++
++           // rThermistor = BALANCE_RESISTOR/((SUPPLY_VOLTAGE/thermistor_voltage)-1);
++            setupBatMon();
++            ADCstartConv();
++            while(!(ADC12IFGR0 & BIT0));
++            result = ADC12MEM0;
++            result = result*2500.0/4096 - 1250/4096.0;
++            ADCstopConv();
++
++            rThermistor = thermistor_voltage*BALANCE_RESISTOR/(result*2 - thermistor_voltage);
++
++            tCelsius = slope*rThermistor + intercept + offset;
++            thermistorTemperature = tCelsius*100.0;            //24.52312 degree => 2452
++            if(thermistorTemperature > 9999)
++                thermistorTemperature = 9999;
++            if( digitalSensor ==  0 )
++                data_buffer(thermistorTemperature);
++            else
++                data_buffer(digitalTemperature);
+ 
+         }
+-
+-
+-
+     }
+ }
+ 

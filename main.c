@@ -42,6 +42,7 @@ extern float result,r;
 extern int avghold[];
 
 extern int offset;
+extern float mSlope;
 extern int digitalSensor;
 
 int adc_addlog = 1;
@@ -120,8 +121,6 @@ int main(void) {
             int l;
             float thermistor_voltage;
             float rThermistor;
-            float temps;
-
             GPIO_setOutputHighOnPin( LED2_PORT, LED2_PIN);
             TMP_Get_Temp(&digitalTemperature, &ui8TemperatureNegFlag,
                     g_ui8TemperatureModeFlag);
@@ -129,20 +128,12 @@ int main(void) {
                 digitalTemperature = (-1.0) * digitalTemperature; //think shoud change to signed variable
             }
 
-            //                  if(Temperature > TEMP_RECORD_THRSHLD ){
-            //                      data_buffer(Temperature);
-            //                  }
-            //                  else{
-            //                      __bic_SR_register(LPM4_bits + GIE);
-            //                      __no_operation();
-            //                  }
             GPIO_setOutputLowOnPin(  LED2_PORT, LED2_PIN);
 
             adc_addlog = 0;
             GPIO_setOutputLowOnPin(  LED2_PORT, LED2_PIN);
 
             GPIO_setOutputHighOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);          //turn on thermistor voltage source GIOP pin to power up the thermistor voltage divider circuit
- //           GPIO_setOutputLowOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);
             setupADC();
             for(l = 0;l < SAMPLES ; l++){
                 GPIO_setOutputHighOnPin(  LED2_PORT, LED2_PIN);
@@ -158,10 +149,6 @@ int main(void) {
             GPIO_setOutputLowOnPin( THERMISTOR_POWER_PORT, THERMISTOR_POWER_PIN);           //turn off thermistor voltage source GIOP pin to power down the thermistor voltage divider circuit
             thermistor_voltage = takeSamples();
 
-            //thermistor_voltage = ( result - 0.5 ) * (2500.0/4096.0);
-//            thermistor_voltage = result*2500/4096 - 1250/4096.0;
-
-           // rThermistor = BALANCE_RESISTOR/((SUPPLY_VOLTAGE/thermistor_voltage)-1);
             setupBatMon();
             ADCstartConv();
             while(!(ADC12IFGR0 & BIT0));
@@ -171,7 +158,10 @@ int main(void) {
 
             rThermistor = thermistor_voltage*BALANCE_RESISTOR/(result*2 - thermistor_voltage);
 
-            tCelsius = slope*rThermistor + intercept + offset;
+            tCelsius = mSlope*rThermistor + intercept + offset;
+//            sprintf(str, "offset: %d Slope: %f\n",offset,mSlope);
+//            myuart_tx_string(str);
+
             thermistorTemperature = tCelsius*100.0;            //24.52312 degree => 2452
             if(thermistorTemperature > 9999)
                 thermistorTemperature = 9999;
@@ -239,7 +229,7 @@ __interrupt void PORT2_ISR(void) {
     }
 }
 
-//
+
 //*****************************************************************************
 // Interrupt Service Routine
 //*****************************************************************************
@@ -250,50 +240,54 @@ __interrupt void ccr0_ISR (void)
     // 4. Timer ISR and vector //
     //timer set to interrupt every 500ms//
     //**************************************************************************
-    timer_1sec_flag++;
-    if(timer_1sec_flag == 10){
-        //thermistorFired=1;
-        adc_addlog = 1;
-        timer_1sec_flag = 0;
-    }
+//    timer_1sec_flag++;
+//    if(timer_1sec_flag == 10){
+//        //thermistorFired=1;
+//        adc_addlog = 1;
+//        timer_1sec_flag = 0;
+//    }
+    GPIO_setOutputHighOnPin(  LED1_PORT, LED1_PIN);
+    __delay_cycles(2500);
+    GPIO_setOutputLowOnPin( LED1_PORT, LED1_PIN);
+
     __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
 }
 //
-#pragma vector=TIMER1_A1_VECTOR
-__interrupt void timer1_ISR(void) {
-
-    //**************************************************************************
-    // 4. Timer ISR and vector
-    //**************************************************************************
-    switch (__even_in_range(TA1IV, TA1IV_TAIFG)) {
-    case TA1IV_NONE:
-        break;                 // (0x00) None
-    case TA1IV_TACCR1:                      // (0x02) CCR1 IFG
-        _no_operation();
-        break;
-    case TA1IV_TACCR2:                      // (0x04) CCR2 IFG
-        _no_operation();
-        break;
-    case TA1IV_3:
-        break;                    // (0x06) Reserved
-    case TA1IV_4:
-        break;                    // (0x08) Reserved
-    case TA1IV_5:
-        break;                    // (0x0A) Reserved
-    case TA1IV_6:
-        break;                    // (0x0C) Reserved
-    case TA1IV_TAIFG:             // (0x0E) TA1IFG - TAR overflow
-        timer_1sec_flag++;
-        if(timer_1sec_flag == 10){
-            adc_addlog=1;
-            timer_1sec_flag = 0;
-        }
-        __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
-        break;
-    default:
-        _never_executed();
-    }
-}
+//#pragma vector=TIMER1_A1_VECTOR
+//__interrupt void timer1_ISR(void) {
+//
+//    //**************************************************************************
+//    // 4. Timer ISR and vector
+//    //**************************************************************************
+//    switch (__even_in_range(TA1IV, TA1IV_TAIFG)) {
+//    case TA1IV_NONE:
+//        break;                 // (0x00) None
+//    case TA1IV_TACCR1:                      // (0x02) CCR1 IFG
+//        _no_operation();
+//        break;
+//    case TA1IV_TACCR2:                      // (0x04) CCR2 IFG
+//        _no_operation();
+//        break;
+//    case TA1IV_3:
+//        break;                    // (0x06) Reserved
+//    case TA1IV_4:
+//        break;                    // (0x08) Reserved
+//    case TA1IV_5:
+//        break;                    // (0x0A) Reserved
+//    case TA1IV_6:
+//        break;                    // (0x0C) Reserved
+//    case TA1IV_TAIFG:             // (0x0E) TA1IFG - TAR overflow
+//        timer_1sec_flag++;
+//        if(timer_1sec_flag == 10){
+//            adc_addlog=1;
+//            timer_1sec_flag = 0;
+//        }
+//        __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
+//        break;
+//    default:
+//        _never_executed();
+//    }
+//}
 
 //#pragma vector = ADC12_VECTOR
 //__interrupt void ADC12_ISR(void)

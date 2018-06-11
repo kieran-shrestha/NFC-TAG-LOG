@@ -3,7 +3,7 @@
 #define NDEFSTART (60+3)
 
 #define MAX_LOGS 500
-#define CHECK_INTERVAL 60
+#define CHECK_INTERVAL 1
 
 #include <stdio.h>
 #include "rtc.h"

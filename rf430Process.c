@@ -20,8 +20,14 @@ unsigned char rstdata[] =  { 0x00, 0x3A+3, /* NLEN; NDEF length (3 byte long mes
 #pragma PERSISTENT (offset)
 int offset = 0;
 
+#pragma PERSISTENT (lotNum)
+int lotNum = 1123;
+
+#pragma PERSISTENT (mSlope)
+float mSlope = -0.00912;
+
 #pragma PERSISTENT (digitalSensor)
-int digitalSensor = 0;
+int digitalSensor = 1;
 
 extern uint16_t SelectedFile;
 extern uint8_t FileTextE104[];
@@ -204,14 +210,60 @@ void rf430Interrupt(uint16_t flags) {
 
                 }
 
-                numOfLogsInFram = 0;
+                    numOfLogsInFram = 0;
+                    ui16nlenhold = 0x3A+3;
+                    ui16plenhold = 0x33+3;
 
-                ui16nlenhold = 0x3A+3;
+                    WDTCTL = 0;
+				} else if (FileTextE104[9] == 'm'){
+                    int x = FileTextE104[11] - 48;
+                    float d1,d2,d3,d4,d5;
+                    d1 = (FileTextE104[13]-48)/10.;
+                    d2 = (FileTextE104[14]-48)/100.;
+                    d3 = (FileTextE104[15]-48)/1000.;
+                    d4 = (FileTextE104[16]-48)/10000.;
+                    d5 = (FileTextE104[17]-48)/100000.;
 
-                ui16plenhold = 0x33+3;
+                    mSlope = x+d1+d2+d3+d4+d5;
+                    if(FileTextE104[10] == '-'){
+                        mSlope *= -1;
+                    }
 
-                WDTCTL = 0;
-				}
+                    for(i =0 ;i<sizeof(rstdata);i++){
+                        FileTextE104[i] = rstdata[i];
+                    }
+
+                    numOfLogsInFram = 0;
+                    ui16nlenhold = 0x3A+3;
+
+                    ui16plenhold = 0x33+3;
+
+                    WDTCTL = 0;
+				} else if (FileTextE104[9] == 'L'){
+				    unsigned char lot[4];
+				    lot[3] = FileTextE104[10];
+                    lot[2] = FileTextE104[11];
+                    lot[1] = FileTextE104[12];
+                    lot[0] = FileTextE104[13];
+
+                    lotNum = lot[3]*1000 + lot[2]*100 + lot[1]*10 + lot[0];
+                    rstdata[17] = lot[3];
+                    rstdata[18] = lot[2];
+                    rstdata[19] = lot[1];
+                    rstdata[20] = lot[0];
+
+
+                    for(i =0 ;i<sizeof(rstdata);i++){
+                        FileTextE104[i] = rstdata[i];
+                    }
+
+                    numOfLogsInFram = 0;
+                    ui16nlenhold = 0x3A+3;
+
+                    ui16plenhold = 0x33+3;
+
+                    WDTCTL = 0;
+                }
 			//}
 
 #ifdef DEBUG

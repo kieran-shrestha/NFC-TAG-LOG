@@ -25,11 +25,11 @@ void initTimers(void)
     //*************************************************************************
     Timer_A_initUpModeParam initUpParam = 		{ 0 };
         initUpParam.clockSource = 				TIMER_A_CLOCKSOURCE_ACLK;                       // Use ACLK (slower clock)
-        initUpParam.clockSourceDivider = 		TIMER_A_CLOCKSOURCE_DIVIDER_1;           		// Input clock = ACLK / 1 = 32KHz
+        initUpParam.clockSourceDivider = 		TIMER_A_CLOCKSOURCE_DIVIDER_2;           		// Input clock = ACLK / 1 = 32KHz
 //        initUpParam.timerPeriod = 				0xFFFF / 2;                                  	// Period (0xFFFF/2):  8000 / 32Khz = 1 second
 //        initUpParam.timerPeriod = 				0x9248;                                     	// Period (0xFFFF/2): => 32Khz = 1 second (correction so calculated value 0x9248 cycles ~ 1sec
-        initUpParam.timerPeriod = 				0x9248/2;                                     	//ideally, 32kHz = 1 second => 32768 cycles = 1 second and 32768/2=16384=0x4000 = 500ms)
-        initUpParam.timerInterruptEnable_TAIE = TIMER_A_TAIE_INTERRUPT_ENABLE;    				// Enable TAR -> 0 interrupt
+        initUpParam.timerPeriod = 				0x9248;                                     	//ideally, 32kHz = 1 second => 32768 cycles = 1 second and 32768/2=16384=0x4000 = 500ms)
+     //   initUpParam.timerInterruptEnable_TAIE = TIMER_A_TAIE_INTERRUPT_ENABLE;    				// Enable TAR -> 0 interrupt
         initUpParam.captureCompareInterruptEnable_CCR0_CCIE =
                 								TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE;             // Enable CCR0 compare interrupt
         initUpParam.timerClear = 				TIMER_A_DO_CLEAR;                               // Clear TAR & clock divider
