@@ -8,9 +8,6 @@
 #ifndef PH_H_
 #define PH_H_
 
-
-
-
 int inline MAXPH(int MIN,int MAX){
 	return MAX;
 }
@@ -18,6 +15,6 @@ int inline MAXPH(int MIN,int MAX){
 int inline MINPH(int MIN,int MAX){
 	return MIN;
 }
-int calibrate(int result);
+int getpH(int result);
 
 #endif /* PH_H_ */

@@ -24,7 +24,7 @@
 #define PH13 482,540
 #define PH14 5410,650
 
-int calibrate(int result){
+int getpH(int result){
 
 	if(result >= MINPH(PH1) && result <= MAXPH(PH1)){
 			//myuart_tx_string("PH1");

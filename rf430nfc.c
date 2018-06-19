@@ -36,9 +36,15 @@ uint8_t CCFileText[15] = { 0x00, 0x0F, /* CCLEN */
 }; //CC file text
 
 #pragma PERSISTENT (FileTextE104)
-uint8_t FileTextE104[10000] = { 0x00, 0x0A, /* NLEN; NDEF length (3 byte long message) */
-                               0xC1, 0x01,/*lenghth of four bytes */0x00, 0x00, 0x00, 0x03, 0x54, /* T = text */
-                               0x02, 0x65, 0x6E, /* 'e', 'n', */
+uint8_t FileTextE104[10000] = { 0x00, 0x3A+3, /* NLEN; NDEF length (3 byte long message) */
+        0xC1, 0x01,/*lenghth of four bytes */0x00, 0x00, 0x00, 0x33+3, 0x54, /* T = text */
+        0x02, 0x65, 0x6E,  /*'e', 'n', */
+
+        '6','9','9','6','-','1','1','2','2',',',                //10
+        '1','8','0','4','2','3',' ','1','3',':','5','1',',',    //13
+        'S','E','O','U','L',' ','M','I','L','K',' ','1',' ','l','t',',',//16
+        'L','o','w',' ','F','a','t',' ',' ',' ','\n',           //11
+
 }; //Ndef file text
 
 uint16_t SelectedFile;		//the file that is currently selected
@@ -106,7 +112,7 @@ void RF430_I2C_Init(void) {
 	UCB0CTLW0 |= UCMODE_3 + UCMST + UCSYNC + UCTR;//I2C mode, Master mode, sync, transmitter
 	UCB0CTLW0 |= UCSSEL_2;                    		// SMCLK = 4MHz
 
-	UCB0BRW = 40; 								// Baudrate = SMLK/40 = 400kHz
+	UCB0BRW = 10; 								// Baudrate = SMLK/40 = 400kHz
 
 
 	UCB0I2CSA = RF430_I2C_ADDR;					// Set Slave Address

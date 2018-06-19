@@ -7,15 +7,27 @@
 
 //#define DEBUG 1
 
-//unsigned char rstdata[] =  { 0x00, 0x0A, /* NLEN; NDEF length (3 byte long message) */
-//		0xC1, 0x01,/*lenghth of four bytes */0x00, 0x00, 0x00, 0x03, 0x54, /* T = text */
-//		0x02, 0x65, 0x6E, /* 'e', 'n', */
-//
-//		/* 'T23.34THH:MM:20YY/MM/DD0x0d' NDEF data; */
-//		0x54, 0x00, 0x00, 0x2E, 0x00, 0x00, 0x54, 0x00, 0x00, 0x3A, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x2F, 0x00, 0x00, 0x2F, 0x00, 0x00 ,0x0D
-//}; //Ndef file text
+unsigned char rstdata[] =  { 0x00, 0x3A+3, /* NLEN; NDEF length (3 byte long message) */
+                             0xC1, 0x01,/*lenghth of four bytes */0x00, 0x00, 0x00, 0x33+3, 0x54, /* T = text */
+                             0x02, 0x65, 0x6E,  /*'e', 'n', */
 
+                             '6','9','9','6','-','1','1','2','2',',',                //10
+                             '1','8','0','4','2','3',' ','1','3',':','5','1',',',    //13
+                             'S','E','O','U','L',' ','M','I','L','K',' ','1',' ','l','t',',',//16
+                             'L','o','w',' ','F','a','t',' ',' ',' ','\n',           //11
+}; //Ndef file text
 
+#pragma PERSISTENT (offset)
+int offset = 0;
+
+#pragma PERSISTENT (lotNum)
+int lotNum = 1123;
+
+#pragma PERSISTENT (mSlope)
+float mSlope = -0.00912;
+
+//#pragma PERSISTENT (digitalSensor)
+//int digitalSensor = 1;
 
 extern uint16_t SelectedFile;
 extern uint8_t FileTextE104[];
@@ -119,59 +131,150 @@ void rf430Interrupt(uint16_t flags) {
 			break;
 		}
 
-//		// NDEF UpdateBinary request
-//		case FILE_AVAILABLE_STATUS: {
-//			uint16_t buffer_start;
-//			uint16_t file_offset;
-//			uint16_t file_length;
-//			int i;
-//#ifdef DEBUG
-//			char str[30];
-//			myuart_tx_string("entered writing section1\n\r");
-//#endif
-//			interrupt_serviced |= DATA_TRANSACTION_INT_FLAG; // clear this flag later
-//			buffer_start = Read_Register(NDEF_BUFFER_START); // where to start in the RF430 buffer to read the file data (0-2999)
-//			file_offset = Read_Register(NDEF_FILE_OFFSET); // the file offset that the data begins at
-//			file_length = Read_Register(NDEF_FILE_LENGTH); // how much of the file is in the RF430 buffer
+		// NDEF UpdateBinary request
+		case FILE_AVAILABLE_STATUS: {
+			uint16_t buffer_start;
+			uint16_t file_offset;
+			uint16_t file_length;
+			int i;
+#ifdef DEBUG
+			char str[30];
+			myuart_tx_string("entered writing section1\n\r");
+#endif
+			interrupt_serviced |= DATA_TRANSACTION_INT_FLAG; // clear this flag later
+			buffer_start = Read_Register(NDEF_BUFFER_START); // where to start in the RF430 buffer to read the file data (0-2999)
+			file_offset = Read_Register(NDEF_FILE_OFFSET); // the file offset that the data begins at
+			file_length = Read_Register(NDEF_FILE_LENGTH); // how much of the file is in the RF430 buffer
+
+			//can have bounds check for the requested length
+			ReadDataOnFile(SelectedFile, buffer_start, file_offset,
+					file_length);
+
+		//	for(i = 9 ;i<10+9;i++){
+
+				if(FileTextE104[9] == 's' && FileTextE104[10] == 't'){
+					HOURS = (FileTextE104[11]-48)<<4 |( FileTextE104[12]-48) ;
+					MINUTES = (FileTextE104[13]-48)<<4 | FileTextE104[14]-48;
+					YEARS = (FileTextE104[15]-48)<<4 | FileTextE104[16]-48;
+
+					MONTHS = (FileTextE104[17]-48)<<4 | FileTextE104[18]-48;
+					DAYS = (FileTextE104[19]-48)<<4 | FileTextE104[20]-48;
+
+					for(i =0 ;i<sizeof(rstdata);i++){
+						FileTextE104[i] = rstdata[i];
+
+					}
+
+					numOfLogsInFram = 0;
+
+					ui16nlenhold = 0x3A+3;
+
+					ui16plenhold = 0x33+3;
+
+					WDTCTL = 0;
+				} else if ( FileTextE104[9] == 'o'){
+				    offset = (FileTextE104[11]-48)*10 + ( FileTextE104[12]-48) ;
+				    if( FileTextE104[10] == '-'){
+				        offset = -1*offset;
+				    }
+				    for(i =0 ;i<sizeof(rstdata);i++){
+                        FileTextE104[i] = rstdata[i];
+
+                    }
+
+                    numOfLogsInFram = 0;
+
+                    ui16nlenhold = 0x3A+3;
+
+                    ui16plenhold = 0x33+3;
+
+                    WDTCTL = 0;
+//				} else if ( FileTextE104[9] == 'D'){
+//				    digitalSensor = 1;
+//				    for(i =0 ;i<sizeof(rstdata);i++){
+//                        FileTextE104[i] = rstdata[i];
 //
-//			//can have bounds check for the requested length
-//			ReadDataOnFile(SelectedFile, buffer_start, file_offset,
-//					file_length);
+//                    }
 //
-//			for(i = 9 ;i<10+9;i++){
+//                    numOfLogsInFram = 0;
 //
-//				if(FileTextE104[9] == 's' && FileTextE104[10] == 't'){
-//					HOURS = (FileTextE104[11]-48)<<4 |( FileTextE104[12]-48) ;
-//					MINUTES = (FileTextE104[13]-48)<<4 | FileTextE104[14]-48;
-//					YEARS = (FileTextE104[15]-48)<<4 | FileTextE104[16]-48;
+//                    ui16nlenhold = 0x3A+3;
 //
-//					MONTHS = (FileTextE104[17]-48)<<4 | FileTextE104[18]-48;
-//					DAYS = (FileTextE104[19]-48)<<4 | FileTextE104[20]-48;
+//                    ui16plenhold = 0x33+3;
 //
-//					for(i =0 ;i<36;i++){
-//						FileTextE104[i] = rstdata[i];
+//                    WDTCTL = 0;
+//				} else if (FileTextE104[9] == 'A'){
+//				    digitalSensor = 0;
+//				    for(i =0 ;i<sizeof(rstdata);i++){
+//                    FileTextE104[i] = rstdata[i];
 //
-//					}
+//                }
 //
-//					numOfLogsInFram = 0;
+//                    numOfLogsInFram = 0;
+//                    ui16nlenhold = 0x3A+3;
+//                    ui16plenhold = 0x33+3;
 //
-//					ui16nlenhold = 0x000A;
-//
-//					ui16plenhold = 0x0003;
-//
-//					WDTCTL = 0;
-//				}
-//			}
-//
-//#ifdef DEBUG
-//			sprintf(str, "\n\rbuff-%d off-%d len-%d self-%d\n\r",buffer_start,file_offset,file_length,SelectedFile);
-//			myuart_tx_string(str);
-//#endif
-//			Write_Register(INT_FLAG_REG, interrupt_serviced); // ACK the flags to clear
-//			Write_Register(HOST_RESPONSE, INT_SERVICED_FIELD); // the interrupt has been serviced
-//
-//			break;
-//		}
+//                    WDTCTL = 0;
+				} else if (FileTextE104[9] == 'm'){
+                    int x = FileTextE104[11] - 48;
+                    float d1,d2,d3,d4,d5;
+                    d1 = (FileTextE104[13]-48)/10.;
+                    d2 = (FileTextE104[14]-48)/100.;
+                    d3 = (FileTextE104[15]-48)/1000.;
+                    d4 = (FileTextE104[16]-48)/10000.;
+                    d5 = (FileTextE104[17]-48)/100000.;
+
+                    mSlope = x+d1+d2+d3+d4+d5;
+                    if(FileTextE104[10] == '-'){
+                        mSlope *= -1;
+                    }
+
+                    for(i =0 ;i<sizeof(rstdata);i++){
+                        FileTextE104[i] = rstdata[i];
+                    }
+
+                    numOfLogsInFram = 0;
+                    ui16nlenhold = 0x3A+3;
+
+                    ui16plenhold = 0x33+3;
+
+                    WDTCTL = 0;
+				} else if (FileTextE104[9] == 'L'){
+				    unsigned char lot[4];
+				    lot[3] = FileTextE104[10];
+                    lot[2] = FileTextE104[11];
+                    lot[1] = FileTextE104[12];
+                    lot[0] = FileTextE104[13];
+
+                    lotNum = lot[3]*1000 + lot[2]*100 + lot[1]*10 + lot[0];
+                    rstdata[17] = lot[3];
+                    rstdata[18] = lot[2];
+                    rstdata[19] = lot[1];
+                    rstdata[20] = lot[0];
+
+
+                    for(i =0 ;i<sizeof(rstdata);i++){
+                        FileTextE104[i] = rstdata[i];
+                    }
+
+                    numOfLogsInFram = 0;
+                    ui16nlenhold = 0x3A+3;
+
+                    ui16plenhold = 0x33+3;
+
+                    WDTCTL = 0;
+                }
+			//}
+
+#ifdef DEBUG
+			sprintf(str, "\n\rbuff-%d off-%d len-%d self-%d\n\r",buffer_start,file_offset,file_length,SelectedFile);
+			myuart_tx_string(str);
+#endif
+			Write_Register(INT_FLAG_REG, interrupt_serviced); // ACK the flags to clear
+			Write_Register(HOST_RESPONSE, INT_SERVICED_FIELD); // the interrupt has been serviced
+
+			break;
+		}
 
 		} //end of switch
 
