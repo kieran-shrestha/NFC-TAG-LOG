@@ -3,7 +3,7 @@
 
 #include <msp430.h> 
 #include "myClock.h"
-#include "myuart.h"
+//#include "myuart.h"
 #include "rf430nfc.h"
 #include "driverlib.h"
 #include "rf430Process.h"
@@ -27,7 +27,7 @@
 #define slope -0.00912
 #define intercept 388.19
 
-char str[60];
+//char str[60];
 
 extern int avghold[];
 
