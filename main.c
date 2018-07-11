@@ -77,7 +77,7 @@ int main(void) {
                 sprintf(str,"%d,%.2f\n",++i,r);
                 myuart_tx_string(str);
                 ADCstopConv();
-                __delay_cycles(1500000);
+                __delay_cycles(20*150000000);
                 GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
          //   }
         //    sprintf(str,"%d,", takeSamples());
