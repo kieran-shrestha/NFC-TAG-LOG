@@ -28,9 +28,10 @@ extern rtcType timestamp;
 extern unsigned char check;
 
 unsigned char bufferHold[DATA_WIDTH];
+extern unsigned int interVal;
 
 void datalog_Init(){
-    interval.temp_interval_minute = CHECK_INTERVAL;
+    interval.temp_interval_minute = interVal;
     bufferHold[0] = ' ';
     bufferHold[3] = '.';
     bufferHold[6] = ',';

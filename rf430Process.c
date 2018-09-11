@@ -24,10 +24,15 @@ int offset = 0;
 int lotNum = 1123;
 
 #pragma PERSISTENT (mSlope)
-float mSlope = -0.00912;
+float mSlope = -0.01089;
+
+#pragma PERSISTENT (interVal)
+unsigned int interVal = 60;
 
 #pragma PERSISTENT (digitalSensor)
 int digitalSensor = 1;
+
+
 
 extern uint16_t SelectedFile;
 extern uint8_t FileTextE104[];
@@ -172,7 +177,24 @@ void rf430Interrupt(uint16_t flags) {
 					ui16plenhold = 0x33+3;
 
 					WDTCTL = 0;
-				} else if ( FileTextE104[9] == 'o'){
+				} else if(FileTextE104[9] == 'I' && FileTextE104[10] == 'i'){
+                    interVal = (FileTextE104[11]-48)*10 + ( FileTextE104[12]-48) ;
+
+                    for(i =0 ;i<sizeof(rstdata);i++){
+                        FileTextE104[i] = rstdata[i];
+
+                    }
+
+                    numOfLogsInFram = 0;
+
+                    ui16nlenhold = 0x3A+3;
+
+                    ui16plenhold = 0x33+3;
+
+                    WDTCTL = 0;
+
+
+				}else if ( FileTextE104[9] == 'o'){
 				    offset = (FileTextE104[11]-48)*10 + ( FileTextE104[12]-48) ;
 				    if( FileTextE104[10] == '-'){
 				        offset = -1*offset;
