@@ -24,13 +24,13 @@ int offset = 0;
 int lotNum = 1123;
 
 #pragma PERSISTENT (mSlope)
-float mSlope = -0.01089;
+float mSlope = -0.00834;
 
 #pragma PERSISTENT (interVal)
-unsigned int interVal = 60;
+unsigned int interVal = 1;
 
 #pragma PERSISTENT (digitalSensor)
-int digitalSensor = 1;
+int digitalSensor = 0;
 
 
 

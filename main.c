@@ -34,7 +34,7 @@
 #define LED2_PIN GPIO_PIN5
 
 #define slope -0.00386
-#define intercept 101.00//388.19
+#define intercept 1120//1314
 
 char str[30];
 
