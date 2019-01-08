@@ -8,7 +8,7 @@ void RF430_I2C_Init(void);
 void Write_Register(unsigned int reg_addr, unsigned int value);
 unsigned int Read_Register(unsigned int reg_addr);
 void Write_Continuous(unsigned int reg_addr, unsigned char* write_data, unsigned int data_length);
-void RF430_Init(void);
+void rf430Init(void);
 
 #define RF430_I2C_ADDR 	0x0018
 

@@ -31,7 +31,7 @@ typedef struct rtc_Type
 
 rtcType timestamp;
 
-void RTC_init();
+void rtcInit();
 rtcType getTimeStamp();
 
 

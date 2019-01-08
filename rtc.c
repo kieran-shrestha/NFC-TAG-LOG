@@ -8,15 +8,11 @@
 #include "rtc.h"
 #include "datalog.h"
 #include "time.h"
-#include "myuart.h"
-#include "stdio.h"
 
-#define DEBUG
+unsigned int minCounter = 0;
 
-unsigned int mincounter = 0;
-//extern unsigned char tempFired;
-extern unsigned char adc_addlog;
-extern datalog_interval_type interval;
+extern unsigned int intAddLog;
+extern unsigned int logInterval;
 
 #pragma PERSISTENT (FIRSTBOOT)
 unsigned char FIRSTBOOT = 1;
@@ -40,17 +36,14 @@ unsigned char DAYS = 1;
 unsigned int YEARS = 1;
 
 
-inline uint8_t decToBcd(uint8_t val)
-{
+inline uint8_t decToBcd(uint8_t val){
   return ( (val/10*16) + (val%10) );
 }
 
-void RTC_init(){
+void rtcInit(){
 	time_t mytime =time(NULL);
 	struct tm tm = *localtime(&mytime);
-#ifdef DEBUG
-			char str[30];
-#endif
+
 	RTCCTL01 |= RTCHOLD | RTCTEV_0 | RTCBCD | RTCCTL0 | RTCTEVIE;//| RTCAIE;
 
 	if(FIRSTBOOT){
@@ -62,17 +55,13 @@ void RTC_init(){
 		RTCYEAR = 0x2000 | decToBcd((unsigned char)YEARS);
 		RTCMON = decToBcd(tm.tm_mon) +1;
 		RTCDAY = decToBcd(tm.tm_mday);
-#ifdef DEBUG
-			sprintf(str, "%d : %d ",tm.tm_hour,tm.tm_min);
-			myuart_tx_string(str);
-#endif
+
 		HOURS = RTCHOUR;
 		MINUTES = RTCMIN;
 		SECONDS = RTCSEC;
-		MONTHS = RTCMON;			//since month set to [0,12] in inbuilt time.c
+		MONTHS = RTCMON;			//since month set to [0,11] in inbuilt time.c
 		DAYS = RTCDAY;
 		YEARS = RTCYEAR;
-
 	}else{
 		RTCHOUR = HOURS;
 		RTCMIN = MINUTES;
@@ -81,8 +70,6 @@ void RTC_init(){
 		RTCMON = MONTHS;
 		RTCDAY = DAYS;
 	}
-
-
 
 	RTCAMIN = 0x00;
 	RTCAHOUR = 0x00;
@@ -135,7 +122,7 @@ __interrupt void RTCISR(void)
     case RTCIV_RTCRDYIFG: break;
     case RTCIV_RTCTEVIFG:		// Should fire and be here once ever minute
 
-    	mincounter++;
+    	minCounter++;
 		//UPDATING TIME
 		HOURS = RTCHOUR;
 		MINUTES = RTCMIN;
@@ -143,16 +130,13 @@ __interrupt void RTCISR(void)
 		MONTHS = RTCMON;
 		DAYS = RTCDAY;
 
-    	if(mincounter == interval.temp_interval_minute){
-    		mincounter = 0;
-    		adc_addlog = 1;
-
+    	if(minCounter == logInterval){
+    		minCounter = 0;
+    		intAddLog = 1;
     	}
-    	__no_operation();
 		__bic_SR_register_on_exit(LPM4_bits + GIE); //wake up to handle INTO
+		break;
 
-
-      break;
     case RTCIV_RTCAIFG:		// Alarm Flag
     	break;
     case RTCIV_RT0PSIFG: break;

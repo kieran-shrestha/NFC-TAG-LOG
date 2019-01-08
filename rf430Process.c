@@ -1,11 +1,6 @@
-#include "myuart.h"
 #include "rf430nfc.h"
 #include "rf430Process.h"
 #include "stdint.h"
-#include <stdio.h>
-#include <driverlib.h>
-
-//#define DEBUG 1
 
 unsigned char rstdata[] =  { 0x00, 0x3A+3, /* NLEN; NDEF length (3 byte long message) */
                              0xC1, 0x01,/*lenghth of four bytes */0x00, 0x00, 0x00, 0x33+3, 0x54, /* T = text */
@@ -32,8 +27,6 @@ unsigned int interVal = 1;
 #pragma PERSISTENT (digitalSensor)
 int digitalSensor = 0;
 
-
-
 extern uint16_t SelectedFile;
 extern uint8_t FileTextE104[];
 
@@ -56,10 +49,6 @@ void rf430Interrupt(uint16_t flags) {
 	uint16_t interrupt_serviced = 0;//which interrupt is just served of nfc ic
 
 	if (flags & FIELD_REMOVED_INT_ENABLE) {
-
-#ifdef DEBUG
-		myuart_tx_string("Removed from the RF field");
-#endif
 		interrupt_serviced |= FIELD_REMOVED_INT_FLAG; // clear this flag later
 		Write_Register(INT_FLAG_REG, interrupt_serviced); //ACK the flags to clear
 	}

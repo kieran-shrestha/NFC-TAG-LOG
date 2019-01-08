@@ -5,13 +5,8 @@
 
 void TMP_I2C_Init(void);
 //unsigned int getTemperature();
-void TMP_Config_Init(void);
-void TMP_Get_Temp(unsigned int* ui16TempReturn, unsigned char* uc8NegFlagReturn, unsigned char uc8ModeFlag );
-
-extern unsigned int g_TempDataFahr;
-extern unsigned int g_TempDataCel;
-extern char g_TempNegFlagCel;
-extern char g_TempNegFlagFahr;
+void tmpInit(void);
+void TMP_Get_Temp(int* ui16TempReturn, unsigned char* uc8NegFlagReturn);
 
 #define TMP112_I2C_ADDR 	0x0048
 
