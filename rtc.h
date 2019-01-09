@@ -13,12 +13,6 @@
 #include "datalog.h"
 
 
-extern unsigned char HOURS;
-extern unsigned char MINUTES;
-extern unsigned char MONTHS;
-extern unsigned char DAYS;
-extern unsigned int YEARS;
-
 typedef struct rtc_Type
 {
 	unsigned char hour[2];
@@ -28,8 +22,6 @@ typedef struct rtc_Type
 	unsigned char month[2];
 
 }rtcType;
-
-rtcType timestamp;
 
 void rtcInit();
 rtcType getTimeStamp();

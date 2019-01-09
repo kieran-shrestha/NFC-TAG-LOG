@@ -3,8 +3,6 @@
 
 #include "msp430.h"
 
-void TMP_I2C_Init(void);
-//unsigned int getTemperature();
 void tmpInit(void);
 void TMP_Get_Temp(int* ui16TempReturn, unsigned char* uc8NegFlagReturn);
 

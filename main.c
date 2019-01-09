@@ -7,10 +7,9 @@
 #include "myTimers.h"
 #include "rtc.h"
 #include "TMP112.h"
-
 #include "rf430nfc.h"
-#include "rf430Process.h"
-#include "datalog.h"
+#include "NFCType4.h"
+#include "thermistor.h"
 
 #define LOGINTERVAL 1
 
@@ -25,7 +24,18 @@
 void gpioInit();
 
 unsigned int intAddLog = 0;
+
+#pragma PERSISTENT (logInterval)
 unsigned int logInterval = LOGINTERVAL;
+
+#pragma PERSISTENT (mSlope)
+float mSlope = 0.12345;
+
+#pragma PERSISTENT (mIntercept)
+float mIntercept = -123.12;
+
+#pragma PERSISTENT (digitalSensor)
+unsigned char digitalSensor = 1;
 
 unsigned char nfcFired = 0;
 unsigned int flags = 0;
@@ -40,22 +50,25 @@ int main(void) {
     timerInit();
     rtcInit();
     tmpInit();
+    datalogInit();
     LED1LOW;
     rf430Init();
     LED2LOW;
     startTimer();
+
     while(1){
         __bis_SR_register(LPM4_bits+GIE);
         __no_operation();
 
         if( nfcFired){
-            flags = Read_Register(INT_FLAG_REG);
+            stopTimer();
+            flags = NFCRead_Register(INT_FLAG_REG);
             LED2HIGH;
             do {
                 if (flags) {
                     rf430Interrupt(flags);
                 }
-                flags = Read_Register(INT_FLAG_REG);
+                flags = NFCRead_Register(INT_FLAG_REG);
             } while (flags);
 
             LED2LOW;
@@ -63,15 +76,20 @@ int main(void) {
             nfcFired = 0;
             P2IFG &= ~BIT2;	//clear the interrupt again
             P2IE |= BIT2;	//enable the interrupt
+            startTimer();
         }
 
         if(intAddLog == 1){
             LED1HIGH;
             intAddLog = 0;
-            TMP_Get_Temp(&digitalTemperature, &tempNegFlag);
-            if (tempNegFlag)
-                digitalTemperature = -1*digitalTemperature;
-           //data_buffer(digitalTemperature);
+            if(digitalSensor == 1){
+                TMP_Get_Temp(&digitalTemperature, &tempNegFlag);
+                if (tempNegFlag)
+                    digitalTemperature = -1*digitalTemperature;
+               data_buffer(digitalTemperature);
+            } else {
+               data_buffer(thermistorTemp(mSlope,mIntercept));
+            }
            LED1LOW;
         }
     }
@@ -122,6 +140,7 @@ __interrupt void TIMER0_A1_ISR(void) {
     case TA0IV_TAIFG:                       // overflow
         LED2HIGH;
         __delay_cycles(500);
+        intAddLog = 1;
         LED2LOW;
       __bic_SR_register_on_exit(LPM4_bits + GIE); //wake up to handle INTO
       break;

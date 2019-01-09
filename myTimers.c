@@ -9,5 +9,9 @@ void timerInit(void)   {
 
 void startTimer(){
     TA0CTL |= MC_2;
+}
+
+void stopTimer(){
+    TA0CTL &= ~MC_2;
 
 }

@@ -11,7 +11,7 @@ void iicInit(unsigned char address){
     UCB0CTLW0 |= UCMODE_3  + UCMST + UCSYNC + UCTR; //I2C mode, Master mode, sync, transmitter
     UCB0CTLW0 |= UCSSEL_2;                          // SMCLK = 0.125MHz
 
-    UCB0BRW = 10;                                   // Baudrate = SMLK/40 = 400kHz
+    UCB0BRW = 2;
 
     UCB0I2CSA  = address;                   // Set Slave Address
     UCB0IE = 0;
@@ -141,4 +141,62 @@ void iicWriteRegister16bitW16bitAddress(unsigned int ui16data, unsigned int addr
     UCB0CTL1 |= UCSWRST;
 }
 
+void iicReadContinuous(unsigned int reg_addr, unsigned char* read_data,unsigned int data_length) {
+    unsigned int i;
+    unsigned char TxAddr[2] = { 0, 0 };
+
+    TxAddr[0] = reg_addr >> 8;      //MSB of address
+    TxAddr[1] = reg_addr & 0xFF;    //LSB of address
+
+    UCB0CTL1 &= ~UCSWRST;
+    UCB0CTL1 |= UCTXSTT + UCTR; //start i2c write operation.  Sending Slave address
+
+    while (!(UCB0IFG & UCTXIFG0));
+    UCB0TXBUF = TxAddr[0];
+    while (!(UCB0IFG & UCTXIFG0));
+    UCB0TXBUF = TxAddr[1];
+    while (!(UCB0IFG & UCTXIFG0));      // Waiting for TX to finish on bus
+    UCB0CTL1 &= ~UCTR;              //i2c read operation
+    UCB0CTL1 |= UCTXSTT;            //repeated start
+    while (!(UCB0IFG & UCRXIFG0));
+
+    for (i = 0; i < data_length - 1; i++) {
+       while (!(UCB0IFG & UCRXIFG0));
+       read_data[i] = UCB0RXBUF;
+    }
+
+    UCB0CTL1 |= UCTXSTP;            //send stop after next RX
+    while (!(UCB0IFG & UCRXIFG0));
+    read_data[i] = UCB0RXBUF;
+    while ((UCB0STAT & UCBBUSY));    // Ensure stop condition got sent
+    UCB0CTL1 |= UCSWRST;
+
+}
+
+void iicWriteContinuous(unsigned int reg_addr, unsigned char* write_data, unsigned int data_length) {
+    unsigned int i;
+    unsigned char TxAddr[2] = { 0, 0 };
+
+    TxAddr[0] = reg_addr >> 8;      //MSB of address
+    TxAddr[1] = reg_addr & 0xFF;    //LSB of address
+
+    UCB0CTL1 &= ~UCSWRST;
+    UCB0CTL1 |= UCTXSTT + UCTR;     //start i2c write operation
+    //write the address
+    while (!(UCB0IFG & UCTXIFG0));
+
+    UCB0TXBUF = TxAddr[0];
+    while (!(UCB0IFG & UCTXIFG0));
+    UCB0TXBUF = TxAddr[1];
+
+    for (i = 0; i < data_length; i++) {
+        while (!(UCB0IFG & UCTXIFG0));
+        UCB0TXBUF = write_data[i];
+    }
+
+    while (!(UCB0IFG & UCTXIFG0));
+    UCB0CTL1 |= UCTXSTP;
+    while ((UCB0STAT & UCBBUSY));    // Ensure stop condition got sent
+    UCB0CTL1 |= UCSWRST;
+}
 

@@ -12,28 +12,28 @@
 unsigned int minCounter = 0;
 
 extern unsigned int intAddLog;
-extern unsigned int logInterval;
+extern const unsigned int logInterval;
 
 #pragma PERSISTENT (FIRSTBOOT)
 unsigned char FIRSTBOOT = 1;
 
 #pragma PERSISTENT (HOURS)
-unsigned char HOURS = 1;
+extern unsigned char HOURS = 1;
 
 #pragma PERSISTENT (MINUTES)
-unsigned char MINUTES = 1;
+extern unsigned char MINUTES = 1;
 
 #pragma PERSISTENT (SECONDS)
-unsigned char SECONDS = 1;
+extern unsigned char SECONDS = 1;
 
 #pragma PERSISTENT (MONTHS)
-unsigned char MONTHS = 1;
+extern unsigned char MONTHS = 1;
 
 #pragma PERSISTENT (DAYS)
-unsigned char DAYS = 1;
+extern unsigned char DAYS = 1;
 
 #pragma PERSISTENT (YEARS)
-unsigned int YEARS = 1;
+extern unsigned int YEARS = 1;
 
 
 inline uint8_t decToBcd(uint8_t val){
@@ -115,8 +115,7 @@ rtcType getTimeStamp(){
 
 
 #pragma vector=RTC_VECTOR
-__interrupt void RTCISR(void)
-{
+__interrupt void RTCISR(void){
   switch (__even_in_range(RTCIV, RTCIV_RTCOFIFG)){
     case RTCIV_NONE: break;
     case RTCIV_RTCRDYIFG: break;

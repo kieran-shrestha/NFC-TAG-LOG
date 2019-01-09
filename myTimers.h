@@ -9,6 +9,7 @@
 // Prototypes
 void timerInit(void);
 void startTimer();
+void stopTimer();
 
 
 #endif /* MYTIMERS_H_ */
