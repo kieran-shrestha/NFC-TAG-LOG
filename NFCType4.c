@@ -412,7 +412,12 @@ void rf430Interrupt(unsigned int flags){
                                FileTextE104[18] = lot[2];
                                FileTextE104[19] = lot[1];
                                FileTextE104[20] = lot[0];
-                         }
+
+                       } else if (settingFile[9] == 'R' && settingFile[10] == 'S' && settingFile[11] == 'T'){
+                           resetLog();
+                           WDTCTL = 0;
+                       }
+
 
                 NFCWrite_Register(INT_FLAG_REG, interrupt_serviced); // ACK the flags to clear
                 NFCWrite_Register(HOST_RESPONSE, INT_SERVICED_FIELD); // the interrupt has been serviced

@@ -1,6 +1,6 @@
 #define DATA_WIDTH 24
 #define NDEFSTART 60
-#define MAX_LOGS 1920
+#define MAX_LOGS 10
 
 #include "rtc.h"
 #include "NFCType4.h"
@@ -19,6 +19,12 @@ extern uint8_t FileTextE104[];
 rtcType timestamp;
 
 unsigned char bufferHold[DATA_WIDTH];
+
+void resetLog(){
+    numOfLogsInFram = 0;
+    ui16nlenhold = DEFNLEN;
+    ui16plenhold = DEFPLEN;
+}
 
 void datalogInit(){
     bufferHold[0] = ' ';
@@ -84,16 +90,16 @@ void data_buffer(int Temperature){
 
         temp = ui16nlenhold;
     /////setting up the length of the ndef record
-        FileTextE104[1] = ( char) ui16nlenhold;
+        FileTextE104[1] = ( unsigned char) ui16nlenhold;
         temp >>=8;
-        FileTextE104[0] = ( char) temp;
+        FileTextE104[0] = ( unsigned char) temp;
     /////setting up the length of the ndef payload
         ui16plenhold += DATA_WIDTH;
         temp = ui16plenhold;
 
-        FileTextE104[7] = ( char) ui16plenhold;
+        FileTextE104[7] = ( unsigned char) ui16plenhold;
         temp >>= 8;
-        FileTextE104[6] = ( char) temp;
+        FileTextE104[6] = ( unsigned char) temp;
 
     //appending data
         for( temp = 0 ; temp < DATA_WIDTH ; temp++){

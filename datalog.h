@@ -11,5 +11,6 @@
 
 void datalogInit();
 void data_buffer(int Temperature);
+void resetLog();
 
 #endif /* DATALOG_H_ */
