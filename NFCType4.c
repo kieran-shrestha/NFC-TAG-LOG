@@ -70,7 +70,7 @@ const uint8_t CCFileText[50] = { 0x00, 0x18,//0x2F, /* CCLEN */
 
 /* This is a NDEF file. It contains NLEN and NDEF message*/
 #pragma PERSISTENT(FileTextE104)
-uint8_t FileTextE104[40000] = {
+uint8_t FileTextE104[46000] = {
           0x00, DEFNLEN, /* NLEN; exclude itself */
           0xC1, 0x01,/*length of four bytes nlen-7 */0x00, 0x00, 0x00, DEFPLEN, 0x54, /* T = text */
           //pay load length starts from this line

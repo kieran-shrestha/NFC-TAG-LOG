@@ -1,9 +1,10 @@
-#define DATA_WIDTH 24
+#define DATA_WIDTH 24U
 #define NDEFSTART 60
-#define MAX_LOGS 10
+#define MAX_LOGS 1900U
 
 #include "rtc.h"
 #include "NFCType4.h"
+#include "myTimers.h"
 
 #pragma PERSISTENT (numOfLogsInFram)
 extern unsigned int numOfLogsInFram = 0;
@@ -40,7 +41,7 @@ void datalogInit(){
 
 void data_buffer(int Temperature){
 /////////////filling the temperature/////////////////////////
-    unsigned int temp;
+    uint16_t temp;
     if(Temperature < 0 ){
         bufferHold[0] = '-';
         Temperature *= -1;
@@ -90,16 +91,16 @@ void data_buffer(int Temperature){
 
         temp = ui16nlenhold;
     /////setting up the length of the ndef record
-        FileTextE104[1] = ( unsigned char) ui16nlenhold;
+        FileTextE104[1] = (unsigned char) ui16nlenhold;
         temp >>=8;
-        FileTextE104[0] = ( unsigned char) temp;
+        FileTextE104[0] = (unsigned char) temp;
     /////setting up the length of the ndef payload
         ui16plenhold += DATA_WIDTH;
         temp = ui16plenhold;
 
-        FileTextE104[7] = ( unsigned char) ui16plenhold;
+        FileTextE104[7] = (unsigned char) ui16plenhold;
         temp >>= 8;
-        FileTextE104[6] = ( unsigned char) temp;
+        FileTextE104[6] = (unsigned char) temp;
 
     //appending data
         for( temp = 0 ; temp < DATA_WIDTH ; temp++){
@@ -109,12 +110,14 @@ void data_buffer(int Temperature){
         numOfLogsInFram += 1;
 
     } else {
-        for(temp = NDEFSTART ;temp < (unsigned int) MAX_LOGS*DATA_WIDTH - DATA_WIDTH ; temp++){
+        stopTimer();
+        for(temp = NDEFSTART ;temp <  MAX_LOGS*DATA_WIDTH - DATA_WIDTH ; temp++){
             FileTextE104[temp] = FileTextE104[temp + DATA_WIDTH];
         }
 
         for( temp = 0 ; temp < DATA_WIDTH ; temp++){
             FileTextE104[NDEFSTART + temp + (numOfLogsInFram-1)*DATA_WIDTH] = bufferHold[temp];
         }
+        startTimer();
     }
 }

@@ -11,7 +11,7 @@
 #include "NFCType4.h"
 #include "thermistor.h"
 
-#define LOGINTERVAL 1
+#define LOGINTERVAL 10
 
 #define LED1HIGH P4OUT |= BIT6
 #define LED1LOW P4OUT &= ~BIT6
@@ -140,7 +140,7 @@ __interrupt void TIMER0_A1_ISR(void) {
     case TA0IV_TAIFG:                       // overflow
         LED2HIGH;
         __delay_cycles(500);
-        intAddLog = 1;
+        //intAddLog = 1;
         LED2LOW;
       __bic_SR_register_on_exit(LPM4_bits + GIE); //wake up to handle INTO
       break;
