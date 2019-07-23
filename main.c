@@ -1,25 +1,76 @@
 #include <msp430.h> 
 #include "myClock.h"
 #include "myuart.h"
-#include "rf430nfc.h"
 #include "driverlib.h"
-#include "rf430Process.h"
+#include "rf430nfc.h"
+#include "NFCType4.h"
 #include "myTimers.h"
 #include "myadc.h"
-//#include "ph.h"
-#include "logger.h"
+#include "rtc.h"
+#include "ph.h"
+#include "datalog.h"
 #include <stdio.h>
+
+#define DIG13(x) if(x) {  P3OUT |= BIT3; } else {  P3OUT &= ~BIT3; }
+#define DIG12(x) if(x) {  P4OUT |= BIT7; } else {  P4OUT &= ~BIT7; }
+#define DIG11(x) if(x) {  P1OUT |= BIT3; } else {  P1OUT &= ~BIT3; }
+#define DIG10(x) if(x) {  P1OUT |= BIT4; } else {  P1OUT &= ~BIT4; }
+#define DIG9(x)  if(x) {  P1OUT |= BIT5; } else {  P1OUT &= ~BIT5; }
+#define DIG8(x)  if(x) {  PJOUT |= BIT0; } else {  PJOUT &= ~BIT0; }
+#define DIG7(x)  if(x) {  PJOUT |= BIT1; } else {  PJOUT &= ~BIT1; }
+
+#define DIG6(x) if(x) {  PJOUT |= BIT2; } else {  PJOUT &= ~BIT2; }
+#define DIG5(x) if(x) {  PJOUT |= BIT3; } else {  PJOUT &= ~BIT3; }
+#define DIG4(x) if(x) {  P4OUT |= BIT0; } else {  P4OUT &= ~BIT0; }
+#define DIG3(x) if(x) {  P4OUT |= BIT1; } else {  P4OUT &= ~BIT1; }
+#define DIG2(x) if(x) {  P4OUT |= BIT2; } else {  P4OUT &= ~BIT2; }
+#define DIG1(x) if(x) {  P4OUT |= BIT3; } else {  P4OUT &= ~BIT3; }
+#define DIG0(x) if(x) {  P2OUT |= BIT5; } else {  P2OUT &= ~BIT5; }
+
+#define CONTROLPINHIGH P1OUT |= BIT0
+#define CONTROLPINLOW P1OUT &= ~BIT0
+
+#define LED2HIGH P4OUT |= BIT5
+#define LED2LOW P4OUT &= ~BIT5
+
+#define ECDCONHIGH P1OUT |= BIT0
+#define ECDCONLOW P1OUT &= ~BIT0
+
+#define LED2TOG P4OUT ^= BIT5
+
+#define LOGINTERVAL 1
 
 char str[50];
 
 extern float result,r;
 extern int avghold[];
 
-int adc_addlog = 1;
-int i=0;
-int is06Sec = 0;
+void gpioInit();
+void writeNumber(unsigned int,int);
+void writeNumber0(unsigned int,int);
+void erase0();
+void erase();
 
 void gpioInit();
+
+unsigned int intAddLog = 1;
+#pragma PERSISTENT (logInterval)
+const unsigned int logInterval = LOGINTERVAL;
+
+int tempResult;
+int displayCounter = 0;
+int lastErase = 0;
+int blinkCount = 0;
+extern int doReset;
+
+int isErase = 1;
+int ecdNumber = 1;
+
+extern unsigned int minuteAlert;
+
+int waitCounter =5;
+
+unsigned char numbers[] = {0x5F, 0x06, 0x3B, 0x2F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x67};
 
 unsigned char nfcFired = 0;
 unsigned int flags = 0;
@@ -27,82 +78,82 @@ unsigned int flags = 0;
 int main(void) {
     WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
     clockInit();
-   // initTimers();
     gpioInit();
-    myuart_init();
-  //  RF430_Init();
+    LED2HIGH;
+    timerInit();
+//    myuart_init();
+    rf430Init();
     myADCinit();
-  //  myuart_tx_string("PROGRAM STARTED...\r");
-
-
- //   startTimer();
+    datalogInit();
+    rtcInit();
+//    myuart_tx_string("PROGRAM STARTED...\r");
+    LED2LOW;
+    startTimer();
 
     while(1){
-       // __bis_SR_register(LPM3_bits+GIE);
-    //    __no_operation();
-//        if( nfcFired){
-//            flags = Read_Register(INT_FLAG_REG);
-//            GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN5);
-//            GPIO_setOutputHighOnPin( GPIO_PORT_P4, GPIO_PIN5);
-//
-//            do {
-//                if (flags) {
-//                    rf430Interrupt(flags);
-//                }
-//                flags = Read_Register(INT_FLAG_REG);
-//            } while (flags);
-//
-//            GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN5);
-//
-//            flags = 0;
-//            nfcFired = 0;
-//            P2IFG &= ~BIT2;	//clear the interrupt again
-//            P2IE |= BIT2;	//enable the interrupt
-//
-//        }
-
-
-        if(adc_addlog == 1){
-          //  int l,m,n;
-         //   adc_addlog = 0;
-            GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
-
-            //for(l = 0;l < SAMPLES ; l++){
-              //  GPIO_setOutputHighOnPin( GPIO_PORT_P4, GPIO_PIN6);
-                ADCstartConv();
-                while(!(ADC12IFGR0 & BIT0));
-                result = ADC12MEM0;
-                r = (result - 2048 - 0.5) *2000.0 /2048;
-            //    avghold[l] = (int)r;
-                sprintf(str,"%d,%.2f\n",++i,r);
-                myuart_tx_string(str);
-                ADCstopConv();
-                __delay_cycles(20*150000000);
-                GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
-         //   }
-        //    sprintf(str,"%d,", takeSamples());
-        //    myuart_tx_string(str);
-      //      n = takeSamples()%1000;
-        //    l = n/100;  //hundreds
-      //      n = n%100;
-      //      m = n/10;   //tenths
-      //      n = n%10;   //ones
-      //      push_data(l,m,n);
-
+        if (doReset ==1 ){
+            resetLog();
+            doReset = 0;
+            WDTCTL = 0;
         }
 
+        __bis_SR_register(LPM3_bits+GIE);
+        __no_operation();
+
+        if( nfcFired){
+             stopTimer();
+             flags = NFCRead_Register(INT_FLAG_REG);
+             LED2HIGH;
+             do {
+                 if (flags) {
+                     rf430Interrupt(flags);
+                 }
+                 flags = NFCRead_Register(INT_FLAG_REG);
+             } while (flags);
+
+             LED2LOW;
+             flags = 0;
+             nfcFired = 0;
+             P2IFG &= ~BIT2; //clear the interrupt again
+             P2IE |= BIT2;   //enable the interrupt
+             startTimer();
+          }
 
 
+        if(intAddLog == 1){
+            int l,m,n,sign;
+            intAddLog = 0;
+            ADCstartConv();
+
+            while(!(ADC12IFGR0 & BIT0));
+            result = ADC12MEM0;
+            r = (result - 2048 - 0.5) *2000.0 /2048;
+//            sprintf(str,"MilliVolts , %.2f\n\r",r);
+//            myuart_tx_string(str);
+            ADCstopConv();
+
+            ecdNumber = getpH(r);
+            if (r < 0){
+                sign = 1;
+                r=r*-1;
+            }
+
+            tempResult = (int)r%1000;
+            l = tempResult/100;  //hundreds
+            tempResult = tempResult%100;
+            m = tempResult/10;   //tenths
+            tempResult = tempResult%10;
+            n = tempResult;   //ones
+            data_buffer(sign, l,m,n);
+            sign = 0;
+
+        }
     }
 }
 
 void gpioInit(){
     PM5CTL0 &= ~LOCKLPM5;
     P4DIR |= BIT5;	//SET AS OUTPUT
-    P4OUT |= BIT5;	//set output as 1
-    __delay_cycles(50000);
-    P4OUT &= ~BIT5;	//SET to 0 again
-
     P1DIR |= 0b00000111;
     //#ifdef DEBUG
     P2DIR |= 0b10111000;
@@ -119,15 +170,7 @@ void gpioInit(){
     P4OUT = 0x00;
     PJOUT = 0X00;
 
-
-    GPIO_setAsOutputPin( GPIO_PORT_P2, GPIO_PIN6);		//for powering the IIC
-    GPIO_setOutputHighOnPin( GPIO_PORT_P2, GPIO_PIN6);
-
-    GPIO_setAsOutputPin( GPIO_PORT_P4, GPIO_PIN6);         // d1 led
-    GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN6);
-
-    GPIO_setAsOutputPin( GPIO_PORT_P4, GPIO_PIN5);         // d2 led
-    GPIO_setOutputLowOnPin( GPIO_PORT_P4, GPIO_PIN5);
+    P2OUT |= BIT6;
 
     P1SEL1 |= BIT6;		//setting p1.6 as sda
     P1SEL1 |= BIT7;		//setting p1.7 as scl
@@ -137,111 +180,181 @@ void gpioInit(){
 
 }
 
+#pragma vector=PORT2_VECTOR
+__interrupt void PORT2_ISR(void) {
+    //INTO interrupt fired
+    if (P2IFG & BIT2) {
+        P2IE &= ~BIT2; //disable INTO
+        P2IFG &= ~BIT2; //clear interrupt flag
+        nfcFired = 1;
+        __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
+    }
+}
 
 
-//#pragma vector=PORT2_VECTOR
-//__interrupt void PORT2_ISR(void) {
-//    //INTO interrupt fired
-//    if (P2IFG & BIT2) {
-//        P2IE &= ~BIT2; //disable INTO
-//        P2IFG &= ~BIT2; //clear interrupt flag
-//        nfcFired = 1;
-//        __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
-//    }
-//}
+void writeNumber(unsigned int num, int invert){
+  unsigned char temp = numbers[num];
+  if (invert == 1) {
+      temp ^=temp;
+  }
+  ECDCONLOW;
+
+  if(temp&0x01) {
+      DIG13(1);
+  } else
+      DIG13(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG12(1);
+  }else
+      DIG12(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG11(1);
+  }else
+      DIG11(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG10(1);
+  }else
+      DIG10(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG9(1);
+  }else
+      DIG9(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG8(1);
+  }else
+      DIG8(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG7(1);
+  }else
+      DIG7(0);
+  temp >>= 1;
+}
+
+void writeNumber0(unsigned int num, int invert){
+  unsigned char temp = numbers[num];
+  if (invert ==1 ) {
+      temp ^=temp;
+  }
+  ECDCONLOW;
+
+  if(temp&0x01) {
+      DIG6(1);
+  } else
+      DIG6(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG5(1);
+  }else
+      DIG5(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG4(1);
+  }else
+      DIG4(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG3(1);
+  }else
+      DIG3(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG2(1);
+  }else
+      DIG2(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG1(1);
+  }else
+      DIG1(0);
+  temp >>= 1;
+
+  if(temp&0x01) {
+      DIG0(1);
+  }else
+      DIG0(0);
+  temp >>= 1;
+}
 
 
-////*****************************************************************************
-//// Interrupt Service Routine
-////*****************************************************************************
-//#pragma vector=TIMER1_A1_VECTOR
-//__interrupt void timer1_ISR(void) {
-//
-//    //**************************************************************************
-//    // 4. Timer ISR and vector
-//    //**************************************************************************
-//    switch (__even_in_range(TA1IV, TA1IV_TAIFG)) {
-//    case TA1IV_NONE:
-//        break;                 // (0x00) None
-//    case TA1IV_TACCR1:                      // (0x02) CCR1 IFG
-//        _no_operation();
-//        break;
-//    case TA1IV_TACCR2:                      // (0x04) CCR2 IFG
-//        _no_operation();
-//        break;
-//    case TA1IV_3:
-//        break;                    // (0x06) Reserved
-//    case TA1IV_4:
-//        break;                    // (0x08) Reserved
-//    case TA1IV_5:
-//        break;                    // (0x0A) Reserved
-//    case TA1IV_6:
-//        break;                    // (0x0C) Reserved
-//    case TA1IV_TAIFG:             // (0x0E) TA1IFG - TAR overflow
-//        is06Sec++;
-//        if(is06Sec == 20){
-//            adc_addlog=1;
-//            is06Sec = 0;
-//        }
-//        __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
-//        break;
-//    default:
-//        _never_executed();
-//    }
-//}
-//
-//#pragma vector = ADC12_VECTOR
-//__interrupt void ADC12_ISR(void)
-//{
-//	switch(__even_in_range(ADC12IV, ADC12IV_ADC12RDYIFG))
-//	{
-//	case ADC12IV_NONE:        break;        // Vector  0:  No interrupt
-//	case ADC12IV_ADC12OVIFG:  break;        // Vector  2:  ADC12MEMx Overflow
-//	case ADC12IV_ADC12TOVIFG: break;        // Vector  4:  Conversion time overflow
-//	case ADC12IV_ADC12HIIFG:  break;        // Vector  6:  ADC12BHI
-//	case ADC12IV_ADC12LOIFG:  break;        // Vector  8:  ADC12BLO
-//	case ADC12IV_ADC12INIFG:  break;        // Vector 10:  ADC12BIN
-//	case ADC12IV_ADC12IFG0:
-//		//ADCstopConv();
-//		result = ADC12MEM0;
-//		myuart_tx_byte('a');
-//		adcfired = 1;
-//		__bic_SR_register_on_exit(LPM0_bits + GIE); //wake up to handle INTO
-//		break;        // Vector 12:  ADC12MEM0 Interrupt
-//	case ADC12IV_ADC12IFG1:   break;        // Vector 14:  ADC12MEM1
-//	case ADC12IV_ADC12IFG2:   break;        // Vector 16:  ADC12MEM2
-//	case ADC12IV_ADC12IFG3:   break;        // Vector 18:  ADC12MEM3
-//	case ADC12IV_ADC12IFG4:           // Vector 20:  ADC12MEM
-//		break;
-//	case ADC12IV_ADC12IFG5:   break;        // Vector 22:  ADC12MEM5
-//	case ADC12IV_ADC12IFG6:   break;        // Vector 24:  ADC12MEM6
-//	case ADC12IV_ADC12IFG7:   break;        // Vector 26:  ADC12MEM7
-//	case ADC12IV_ADC12IFG8:   break;        // Vector 28:  ADC12MEM8
-//	case ADC12IV_ADC12IFG9:   break;        // Vector 30:  ADC12MEM9
-//	case ADC12IV_ADC12IFG10:  break;        // Vector 32:  ADC12MEM10
-//	case ADC12IV_ADC12IFG11:  break;        // Vector 34:  ADC12MEM11
-//	case ADC12IV_ADC12IFG12:  break;        // Vector 36:  ADC12MEM12
-//	case ADC12IV_ADC12IFG13:  break;        // Vector 38:  ADC12MEM13
-//	case ADC12IV_ADC12IFG14:  break;        // Vector 40:  ADC12MEM14
-//	case ADC12IV_ADC12IFG15:  break;        // Vector 42:  ADC12MEM15
-//	case ADC12IV_ADC12IFG16:  break;        // Vector 44:  ADC12MEM16
-//	case ADC12IV_ADC12IFG17:  break;        // Vector 46:  ADC12MEM17
-//	case ADC12IV_ADC12IFG18:  break;        // Vector 48:  ADC12MEM18
-//	case ADC12IV_ADC12IFG19:  break;        // Vector 50:  ADC12MEM19
-//	case ADC12IV_ADC12IFG20:  break;        // Vector 52:  ADC12MEM20
-//	case ADC12IV_ADC12IFG21:  break;        // Vector 54:  ADC12MEM21
-//	case ADC12IV_ADC12IFG22:  break;        // Vector 56:  ADC12MEM22
-//	case ADC12IV_ADC12IFG23:  break;        // Vector 58:  ADC12MEM23
-//	case ADC12IV_ADC12IFG24:  break;        // Vector 60:  ADC12MEM24
-//	case ADC12IV_ADC12IFG25:  break;        // Vector 62:  ADC12MEM25
-//	case ADC12IV_ADC12IFG26:  break;        // Vector 64:  ADC12MEM26
-//	case ADC12IV_ADC12IFG27:  break;        // Vector 66:  ADC12MEM27
-//	case ADC12IV_ADC12IFG28:  break;        // Vector 68:  ADC12MEM28
-//	case ADC12IV_ADC12IFG29:  break;        // Vector 70:  ADC12MEM29
-//	case ADC12IV_ADC12IFG30:  break;        // Vector 72:  ADC12MEM30
-//	case ADC12IV_ADC12IFG31:  break;        // Vector 74:  ADC12MEM31
-//	case ADC12IV_ADC12RDYIFG: break;        // Vector 76:  ADC12RDY
-//	default: break;
-//	}
-//}
-//
+void erase(){
+    DIG13(0);
+    DIG12(0);
+    DIG11(0);
+    DIG10(0);
+    DIG9(0);
+    DIG8(0);
+    DIG7(0);
+    ECDCONHIGH;
+    lastErase = 1;
+}
+
+void erase0(){
+    DIG6(0);
+    DIG5(0);
+    DIG4(0);
+    DIG3(0);
+    DIG2(0);
+    DIG1(0);
+    DIG0(0);
+    ECDCONHIGH;
+    lastErase = 1;
+}
+
+#pragma vector=TIMER0_A1_VECTOR
+__interrupt void TIMER0_A1_ISR(void) {
+  switch(__even_in_range(TA0IV, TA0IV_TAIFG)) {
+    case TA0IV_NONE:   break;               // No interrupt
+    case TA0IV_TACCR1:                      //wake up to handle INTO
+        break;               // CCR1 not used
+    case TA0IV_TACCR2: break;               // CCR2 not used
+    case TA0IV_3:      break;               // reserved
+    case TA0IV_4:      break;               // reserved
+    case TA0IV_5:      break;               // reserved
+    case TA0IV_6:      break;               // reserved
+    case TA0IV_TAIFG:                       // overflow
+        displayCounter++;
+        if(isErase == 1) {
+//            intAddLog = 1;
+             erase();
+             erase0();
+             if(displayCounter == waitCounter){
+                 displayCounter = 0;
+                 isErase = 0;
+             }
+        } else {
+            if(ecdNumber/10 !=0)
+               writeNumber0(ecdNumber/10,0);
+            writeNumber(ecdNumber%10,0);
+            if( displayCounter == waitCounter ){
+                displayCounter = 0;
+                isErase = 1;
+                blinkCount++;
+                if(blinkCount ==5){
+                    blinkCount = 0;
+                    stopTimer();
+                }
+              }
+        }
+
+      __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
+      break;
+
+    default: break;
+}}

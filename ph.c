@@ -1,104 +1,104 @@
 /*
  * ph.c
  *
- *  Created on: May 2, 2017
+ *  Created on: 2019. 5. 13.
  *      Author: kiran
  */
 
+
 #include "ph.h"
-#include "myuart.h"
 
-#define PH1 0,64
-#define PH2 65,89//////////
-#define PH3 90,115
-#define PH4 120,160
-#define PH5 165,190
-#define PH6 195,225
-#define PH7 226,250
-/////////////////////////////
-#define PH8 251,275
-#define PH9 282,335
-#define PH10 340,400
-#define PH11 401,420
-#define PH12 430,480
-#define PH13 482,540
-#define PH14 5410,650
+#pragma PERSISTENT (PH1)
+int PH1[2] = {999,999};
+#pragma PERSISTENT (PH2)
+int PH2[2] = {999,999};
+#pragma PERSISTENT (PH3)
+int PH3[2] = {999,999};
+#pragma PERSISTENT (PH4)
+int PH4[2] = {999,999};
+#pragma PERSISTENT (PH5)
+int PH5[2] = {999,999};
+#pragma PERSISTENT (PH6)
+int PH6[2] = {999,999};
+#pragma PERSISTENT (PH7)
+int PH7[2] = {999,999};
+#pragma PERSISTENT (PH8)
+int PH8[2] = {999,999};
+#pragma PERSISTENT (PH9)
+int PH9[2] = {999,999};
+#pragma PERSISTENT (PH10)
+int PH10[2] = {999,999};
+#pragma PERSISTENT (PH11)
+int PH11[2] = {999,999};
+#pragma PERSISTENT (PH12)
+int PH12[2] = {999,999};
+#pragma PERSISTENT (PH13)
+int PH13[2] = {999,999};
+#pragma PERSISTENT (PH14)
+int PH14[2] = {999,999};
 
-int calibrate(int result){
+void upDatepHLevels(int pHLevel[8]){
+    PH4[0] = pHLevel[0];
+    PH4[1] = pHLevel[1];
 
-	if(result >= MINPH(PH1) && result <= MAXPH(PH1)){
-			//myuart_tx_string("PH1");
-			//myuart_tx_byte('\r');
-		return 1;
-	} else
-	if(result >= MINPH(PH2) && result <= MAXPH(PH2)){
-			//myuart_tx_string("PH2");
-			//myuart_tx_byte('\r');
-		return 2;
-	}else
-	if(result >= MINPH(PH3) && result <= MAXPH(PH3)){
-			//myuart_tx_string("PH3");
-		//	myuart_tx_byte('\r');
-		return 3;
-	}else
-	if(result >= MINPH(PH4) && result <= MAXPH(PH4)){
-			//myuart_tx_string("PH4");
-			//myuart_tx_byte('\r');
-		return 4;
-	}else
-	if(result >= MINPH(PH5) && result <= MAXPH(PH5)){
-			//myuart_tx_string("PH5");
-		//	myuart_tx_byte('\r');
-		return 5;
-	}else
-	if(result >= MINPH(PH6) && result <= MAXPH(PH6)){
-			//myuart_tx_string("PH6");
-		//	myuart_tx_byte('\r');
-		return 6;
-	}else
-	if(result >= MINPH(PH7) && result <= MAXPH(PH7)){
-			//myuart_tx_string("PH7");
-			//myuart_tx_byte('\r');
-		return 7;
-	}else
-	if(result >= MINPH(PH8) && result <= MAXPH(PH8)){
-		//	myuart_tx_string("PH8");
-		//	myuart_tx_byte('\r');
-		return 8;
-	}else
+    PH5[0] = pHLevel[2];
+    PH5[1] = pHLevel[3];
 
-	if(result >= MINPH(PH9) && result <= MAXPH(PH9)){
-		//	myuart_tx_string("PH9");
-		//	myuart_tx_byte('\r');
-		return 9;
-	}else
-	if(result >= MINPH(PH10) && result <= MAXPH(PH10)){
-		//	myuart_tx_string("PH10");
-		//	myuart_tx_byte('\r');
-		return 10;
-	}else
-	if(result >= MINPH(PH11) && result <= MAXPH(PH11)){
-		//myuart_tx_string("PH11");
-		//myuart_tx_byte('\r');
-		return 11;
-	}else
-		if(result >= MINPH(PH12) && result <= MAXPH(PH12)){
-		//	myuart_tx_string("PH12");
-			//myuart_tx_byte('\r');
-			return 12;
-	}else
-	if(result >= MINPH(PH13) && result <= MAXPH(PH13)){
-		//	myuart_tx_string("PH13");
-		//	myuart_tx_byte('\r');
-		return 13;
-	}else
-		if(result >= MINPH(PH14) && result <= MAXPH(PH14)){
-		//	myuart_tx_string("PH14");
-		//	myuart_tx_byte('\r');
-			return 14;
-	}else{
-		//	myuart_tx_string("XX");
-		//	myuart_tx_byte('\r');
-		return 0;
-	}
+    PH6[0] = pHLevel[4];
+    PH6[1] = pHLevel[5];
+
+    PH7[0] = pHLevel[6];
+    PH7[1] = pHLevel[7];
 }
+
+int getpH(int result){
+
+    if(result >= MINPH(PH1) && result <= MAXPH(PH1)){
+        return  (int)(10*( (float)(result-MAXPH(PH1))/( MINPH(PH1) - MAXPH(PH1) ) + 0 ));
+    } else
+    if(result >= MINPH(PH2) && result <= MAXPH(PH2)){
+        return  (int)(10*( (float)(result-MAXPH(PH2))/( MINPH(PH2) - MAXPH(PH2) ) + 1 ));
+    }else
+    if(result >= MINPH(PH3) && result <= MAXPH(PH3)){
+        return  (int)(10*( (float)(result-MAXPH(PH3))/( MINPH(PH3) - MAXPH(PH3) ) + 2 ));
+    }else
+    if(result >= MINPH(PH4) && result <= MAXPH(PH4)){
+        return  (int)(10*( (float)(result-MAXPH(PH4))/( MINPH(PH4) - MAXPH(PH4) ) + 3 ));
+    }else
+    if(result >= MINPH(PH5) && result <= MAXPH(PH5)){
+        return  (int)(10*( (float)(result-MAXPH(PH5))/( MINPH(PH5) - MAXPH(PH5) ) + 4 ));
+    }else
+    if(result >= MINPH(PH6) && result <= MAXPH(PH6)){
+        return  (int)(10*( (float)(result-MAXPH(PH6))/( MINPH(PH6) - MAXPH(PH6) ) + 5 ));
+    }else
+    if(result >= MINPH(PH7) && result <= MAXPH(PH7)){
+        return (int)(10*( (float)(result-MAXPH(PH7))/( MINPH(PH7) - MAXPH(PH7) ) + 6 ));
+    }else
+    if(result >= MINPH(PH8) && result <= MAXPH(PH8)){
+        return  (int)(10*( (float)(result-MAXPH(PH8))/( MINPH(PH8) - MAXPH(PH8) ) + 7 ));
+    }else
+
+    if(result >= MINPH(PH9) && result <= MAXPH(PH9)){
+        return  (int)(10*( (float)(result-MAXPH(PH9))/( MINPH(PH9) - MAXPH(PH9) ) + 8 ));
+    }else
+    if(result >= MINPH(PH10) && result <= MAXPH(PH10)){
+        return  (int)(10*( (float)(result-MAXPH(PH10))/( MINPH(PH10) - MAXPH(PH10) ) + 9 ));
+    }else
+    if(result >= MINPH(PH11) && result <= MAXPH(PH11)){
+        return  (int) ((float)(result-MAXPH(PH11))/( MINPH(PH11) - MAXPH(PH11) ) + 10 );
+    }else
+        if(result >= MINPH(PH12) && result <= MAXPH(PH12)){
+            return  (int)( (float)(result-MAXPH(PH12))/( MINPH(PH12) - MAXPH(PH12) ) + 11 );
+    }else
+    if(result >= MINPH(PH13) && result <= MAXPH(PH13)){
+        return  (int)( (float)(result-MAXPH(PH13))/( MINPH(PH13) - MAXPH(PH13) ) + 12 );
+    }else
+        if(result >= MINPH(PH14) && result <= MAXPH(PH14)){
+            return  (int)( (float)(result-MAXPH(PH14))/( MINPH(PH14) - MAXPH(PH14) ) + 13 );
+    }else{
+        //  myuart_tx_string("XX");
+        //  myuart_tx_byte('\r');
+        return 0;
+    }
+}
+

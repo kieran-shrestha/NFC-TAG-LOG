@@ -1,7 +1,7 @@
 /*
  * ph.h
  *
- *  Created on: May 2, 2017
+ *  Created on: 2019. 5. 13.
  *      Author: kiran
  */
 
@@ -9,15 +9,15 @@
 #define PH_H_
 
 
-
-
-int inline MAXPH(int MIN,int MAX){
-	return MAX;
+int inline MAXPH(int MINMAX[]){
+    return MINMAX[1];
 }
 
-int inline MINPH(int MIN,int MAX){
-	return MIN;
+int inline MINPH(int MINMAX[]){
+    return MINMAX[0];
 }
-int calibrate(int result);
+int getpH(int result);
+void upDatepHLevels(int pHLevel[8]);
+
 
 #endif /* PH_H_ */
