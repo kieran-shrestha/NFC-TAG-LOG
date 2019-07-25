@@ -49,7 +49,6 @@ void data_buffer(int sign, int l,int m, int n){
        bufferHold[0] = '-';
    else
        bufferHold[0] = '+';
-
 //////////////////////////////////////////////////////////////
 
     timestamp = getTimeStamp();
