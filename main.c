@@ -11,66 +11,29 @@
 #include "datalog.h"
 #include <stdio.h>
 
-#define DIG13(x) if(x) {  P3OUT |= BIT3; } else {  P3OUT &= ~BIT3; }
-#define DIG12(x) if(x) {  P4OUT |= BIT7; } else {  P4OUT &= ~BIT7; }
-#define DIG11(x) if(x) {  P1OUT |= BIT3; } else {  P1OUT &= ~BIT3; }
-#define DIG10(x) if(x) {  P1OUT |= BIT4; } else {  P1OUT &= ~BIT4; }
-#define DIG9(x)  if(x) {  P1OUT |= BIT5; } else {  P1OUT &= ~BIT5; }
-#define DIG8(x)  if(x) {  PJOUT |= BIT0; } else {  PJOUT &= ~BIT0; }
-#define DIG7(x)  if(x) {  PJOUT |= BIT1; } else {  PJOUT &= ~BIT1; }
-
-#define DIG6(x) if(x) {  PJOUT |= BIT2; } else {  PJOUT &= ~BIT2; }
-#define DIG5(x) if(x) {  PJOUT |= BIT3; } else {  PJOUT &= ~BIT3; }
-#define DIG4(x) if(x) {  P4OUT |= BIT0; } else {  P4OUT &= ~BIT0; }
-#define DIG3(x) if(x) {  P4OUT |= BIT1; } else {  P4OUT &= ~BIT1; }
-#define DIG2(x) if(x) {  P4OUT |= BIT2; } else {  P4OUT &= ~BIT2; }
-#define DIG1(x) if(x) {  P4OUT |= BIT3; } else {  P4OUT &= ~BIT3; }
-#define DIG0(x) if(x) {  P2OUT |= BIT5; } else {  P2OUT &= ~BIT5; }
-
-#define CONTROLPINHIGH P1OUT |= BIT0
-#define CONTROLPINLOW P1OUT &= ~BIT0
+#define LOGINTERVAL 1
 
 #define LED2HIGH P4OUT |= BIT5
 #define LED2LOW P4OUT &= ~BIT5
-
-#define ECDCONHIGH P1OUT |= BIT0
-#define ECDCONLOW P1OUT &= ~BIT0
-
 #define LED2TOG P4OUT ^= BIT5
 
-#define LOGINTERVAL 1
-
-char str[50];
+//char str[25];
 
 extern float result,r;
 extern int avghold[];
 
 void gpioInit();
-void writeNumber(unsigned int,int);
-void writeNumber0(unsigned int,int);
-void erase0();
-void erase();
-
-void gpioInit();
 
 unsigned int intAddLog = 1;
+
 #pragma PERSISTENT (logInterval)
 const unsigned int logInterval = LOGINTERVAL;
 
 int tempResult;
-int displayCounter = 0;
-int lastErase = 0;
-int blinkCount = 0;
+
 extern int doReset;
 
-int isErase = 1;
-int ecdNumber = 1;
-
 extern unsigned int minuteAlert;
-
-int waitCounter =5;
-
-unsigned char numbers[] = {0x5F, 0x06, 0x3B, 0x2F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x67};
 
 unsigned char nfcFired = 0;
 unsigned int flags = 0;
@@ -132,7 +95,6 @@ int main(void) {
 //            myuart_tx_string(str);
             ADCstopConv();
 
-            ecdNumber = getpH(r);
             if (r < 0){
                 sign = 1;
                 r=r*-1;
@@ -191,132 +153,6 @@ __interrupt void PORT2_ISR(void) {
     }
 }
 
-
-void writeNumber(unsigned int num, int invert){
-  unsigned char temp = numbers[num];
-  if (invert == 1) {
-      temp ^=temp;
-  }
-  ECDCONLOW;
-
-  if(temp&0x01) {
-      DIG13(1);
-  } else
-      DIG13(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG12(1);
-  }else
-      DIG12(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG11(1);
-  }else
-      DIG11(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG10(1);
-  }else
-      DIG10(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG9(1);
-  }else
-      DIG9(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG8(1);
-  }else
-      DIG8(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG7(1);
-  }else
-      DIG7(0);
-  temp >>= 1;
-}
-
-void writeNumber0(unsigned int num, int invert){
-  unsigned char temp = numbers[num];
-  if (invert ==1 ) {
-      temp ^=temp;
-  }
-  ECDCONLOW;
-
-  if(temp&0x01) {
-      DIG6(1);
-  } else
-      DIG6(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG5(1);
-  }else
-      DIG5(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG4(1);
-  }else
-      DIG4(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG3(1);
-  }else
-      DIG3(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG2(1);
-  }else
-      DIG2(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG1(1);
-  }else
-      DIG1(0);
-  temp >>= 1;
-
-  if(temp&0x01) {
-      DIG0(1);
-  }else
-      DIG0(0);
-  temp >>= 1;
-}
-
-
-void erase(){
-    DIG13(0);
-    DIG12(0);
-    DIG11(0);
-    DIG10(0);
-    DIG9(0);
-    DIG8(0);
-    DIG7(0);
-    ECDCONHIGH;
-    lastErase = 1;
-}
-
-void erase0(){
-    DIG6(0);
-    DIG5(0);
-    DIG4(0);
-    DIG3(0);
-    DIG2(0);
-    DIG1(0);
-    DIG0(0);
-    ECDCONHIGH;
-    lastErase = 1;
-}
-
 #pragma vector=TIMER0_A1_VECTOR
 __interrupt void TIMER0_A1_ISR(void) {
   switch(__even_in_range(TA0IV, TA0IV_TAIFG)) {
@@ -329,29 +165,6 @@ __interrupt void TIMER0_A1_ISR(void) {
     case TA0IV_5:      break;               // reserved
     case TA0IV_6:      break;               // reserved
     case TA0IV_TAIFG:                       // overflow
-        displayCounter++;
-        if(isErase == 1) {
-//            intAddLog = 1;
-             erase();
-             erase0();
-             if(displayCounter == waitCounter){
-                 displayCounter = 0;
-                 isErase = 0;
-             }
-        } else {
-            if(ecdNumber/10 !=0)
-               writeNumber0(ecdNumber/10,0);
-            writeNumber(ecdNumber%10,0);
-            if( displayCounter == waitCounter ){
-                displayCounter = 0;
-                isErase = 1;
-                blinkCount++;
-                if(blinkCount ==5){
-                    blinkCount = 0;
-                    stopTimer();
-                }
-              }
-        }
 
       __bic_SR_register_on_exit(LPM3_bits + GIE); //wake up to handle INTO
       break;
